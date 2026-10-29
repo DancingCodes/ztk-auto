@@ -1,0 +1,9 @@
+{
+  "accounts": [
+    {
+      "username": "手机号",
+      "password": "密码",
+      "agent_no": "代理商号"
+    }
+  ]
+}
