@@ -17,12 +17,14 @@ func main() {
 
 	// 拿列表数据
 	date := time.Now().AddDate(0, 0, -1).Format("2006-01-02")
-	results := map[string]any{}
+	var results []any
 	for _, partner := range pc.PCPartners {
-		results[partner] = ztk.PCFindChange(context.Background(), pcToken, date, partner)
+		results = append(results, map[string]any{
+			"partner": partner,
+			"data":    ztk.PCFindChange(context.Background(), pcToken, date, partner),
+		})
 	}
 	result, _ := json.MarshalIndent(results, "", "  ")
 	fmt.Println(string(result))
-
 
 }
