@@ -18,6 +18,18 @@ const (
 	pcChangeURL = "https://tkapi.lakala.com/ztkapi/customer/findChange"
 )
 
+type PCAccount struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+func LoadPCAccount(path string) PCAccount {
+	raw, _ := os.ReadFile(path)
+	var account PCAccount
+	_ = json.Unmarshal(raw, &account)
+	return account
+}
+
 func LoadPCPartners(path string) []string {
 	raw, _ := os.ReadFile(path)
 	var data struct {
@@ -33,10 +45,10 @@ func LoadPCPartners(path string) []string {
 	return partners
 }
 
-func PCLogin(ctx context.Context, username, password, operateID string) map[string]any {
+func PCLogin(ctx context.Context, username, password string) map[string]any {
 	var body bytes.Buffer
 	w := multipart.NewWriter(&body)
-	for _, field := range [][2]string{{"username", username}, {"password", password}, {"operateId", operateID}, {"grant_type", "password"}} {
+	for _, field := range [][2]string{{"username", username}, {"password", password}, {"grant_type", "password"}} {
 		_ = w.WriteField(field[0], field[1])
 	}
 	_ = w.Close()

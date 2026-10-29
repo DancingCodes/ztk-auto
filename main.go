@@ -3,17 +3,16 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"os"
+	"fmt"
 
 	ztk "ztk-auto/internal"
 )
 
 func main() {
-	items := ztk.LoadPhoneAccounts("config/phoneAccounts.json")
-	phoneAccounts := ztk.PhoneAccountsByPhone(items)
-	results := make(map[string]any, len(phoneAccounts))
-	for phoneNo, item := range phoneAccounts {
-		results[phoneNo] = ztk.AppLogin(context.Background(), item.Phone, item.Password)
-	}
-	_ = json.NewEncoder(os.Stdout).Encode(results)
+	pcAccount := ztk.LoadPCAccount("config/pcAccount.json")
+	pcLogin := ztk.PCLogin(context.Background(), pcAccount.Username, pcAccount.Password)
+	pcToken, _ := pcLogin["access_token"].(string)
+	_ = pcToken
+	result, _ := json.MarshalIndent(pcLogin, "", "  ")
+	fmt.Println(string(result))
 }
