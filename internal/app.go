@@ -37,10 +37,10 @@ func LoadAppAccounts(path string) []AppAccount {
 	return data.AppAccounts
 }
 
-func AppAccountsByPhone(accounts []AppAccount) map[string]AppAccount {
+func AppAccountsByServiceProvider(accounts []AppAccount) map[string]AppAccount {
 	items := make(map[string]AppAccount, len(accounts))
 	for _, item := range accounts {
-		items[item.Phone] = item
+		items[item.ServiceProviderNo] = item
 	}
 	return items
 }
