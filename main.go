@@ -5,15 +5,15 @@ import (
 	"encoding/json"
 	"os"
 
-	"ztk-auto/internal/phone"
+	ztk "ztk-auto/internal"
 )
 
 func main() {
-	items := phone.LoadAccounts("config/phoneAccounts.json")
-	phoneAccounts := phone.AccountsByPhone(items)
+	items := ztk.LoadPhoneAccounts("config/phoneAccounts.json")
+	phoneAccounts := ztk.PhoneAccountsByPhone(items)
 	results := make(map[string]any, len(phoneAccounts))
 	for phoneNo, item := range phoneAccounts {
-		results[phoneNo] = phone.Login(context.Background(), item.Phone, item.Password)
+		results[phoneNo] = ztk.AppLogin(context.Background(), item.Phone, item.Password)
 	}
 	_ = json.NewEncoder(os.Stdout).Encode(results)
 }
