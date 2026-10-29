@@ -15,6 +15,11 @@ func main() {
 	pc := ztk.LoadPC("config/pc.json")
 	pcLogin := ztk.PCLogin(context.Background(), pc.Username, pc.Password, pc.OperateID)
 	pcToken, _ := pcLogin["access_token"].(string)
+	if pcToken == "" {
+		result, _ := json.MarshalIndent(pcLogin, "", "  ")
+		fmt.Println(string(result))
+		return
+	}
 
 	// PCToken -> PC商户列表
 	date := time.Now().AddDate(0, 0, -1).Format("2006-01-02")
@@ -24,6 +29,16 @@ func main() {
 			"partner": partner,
 			"data":    ztk.PCFindChange(context.Background(), pcToken, date, partner),
 		})
+	}
+
+	for _, result := range results {
+		pcData, ok := result["data"].(map[string]any)
+		_, hasRecords := pcData["records"].([]any)
+		if !ok || !hasRecords {
+			response, _ := json.MarshalIndent(result, "", "  ")
+			fmt.Println(string(response))
+			return
+		}
 	}
 
 	// PC商户列表 -> App登录 -> 商户
