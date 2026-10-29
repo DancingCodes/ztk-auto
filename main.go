@@ -43,11 +43,7 @@ func main() {
 		if !ok {
 			continue
 		}
-		page, ok := pcData["data"].(map[string]any)
-		if !ok {
-			continue
-		}
-		records, ok := page["records"].([]any)
+		records, ok := pcData["records"].([]any)
 		if !ok {
 			continue
 		}
@@ -58,7 +54,7 @@ func main() {
 			}
 			externalCustomerNo, _ := record["externalCustomerNo"].(string)
 			if externalCustomerNo != "" {
-				record["appData"] = ztk.AppGetInfo(context.Background(), appToken, externalCustomerNo)
+				record["appData"] = ztk.AppFindCustomer(context.Background(), appToken, externalCustomerNo)
 			}
 		}
 	}

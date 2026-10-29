@@ -63,9 +63,9 @@ func AppLogin(ctx context.Context, phone, password, serviceProviderNo string) ma
 	return data
 }
 
-func AppGetInfo(ctx context.Context, token, customer string) any {
+func AppFindCustomer(ctx context.Context, token, customer string) any {
 	url := appGetInfoURL + "?customerNameOrExtCustomerNo=" + customer + "&status=&pageNum=1&pageSize=10"
-	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBufferString("{}"))
+	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	for key, value := range map[string]string{
 		"Authorization": "bearer " + token, "User-Agent": "Dart/3.4 (dart:io)", "appcode": "ZHTK",
 		"Accept-Encoding": "gzip", "model": "22041216C", "buildnumber": "10005",
