@@ -3,23 +3,19 @@ package auth
 
 import (
 	"bytes"
-	"compress/gzip"
 	"context"
 	"crypto/rand"
 	"crypto/tls"
 	"encoding/hex"
-	"encoding/json"
-	"fmt"
-	"io"
-	"mime/multipart"
 	"net/http"
-	"net/url"
 	"time"
+
+	"ztk-auto/internal/httpx"
 )
 
 const (
 	defaultLoginURL     = "https://htkapi.lakala.com/auth/oauth/token"
-	defaultGetInfoURL   = "https://tkapi.lakala.com/ztkapi/customer?customerNameOrExtCustomerNo=123&status=&pageNum=1&pageSize=10"
+	defaultGetInfoURL   = "https://tkapi.lakala.com/ztkapi/customer"
 	defaultClientID     = "zhtk"
 	defaultClientSecret = "prKTcg0iN46omMAF"
 )
@@ -50,54 +46,22 @@ func NewClient() *Client {
 
 // GetInfo 使用移动端 access token 按手机号或客户编号查询客户信息。
 func (c *Client) GetInfo(ctx context.Context, token, customerNameOrExtCustomerNo string) (any, error) {
-	u, err := url.Parse(c.getInfoURL)
-	if err != nil {
-		return nil, err
-	}
-	q := u.Query()
-	q.Set("customerNameOrExtCustomerNo", customerNameOrExtCustomerNo)
-	u.RawQuery = q.Encode()
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewBufferString("{}"))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Authorization", "bearer "+token)
-	for key, value := range map[string]string{
-		"User-Agent":       "Dart/3.4 (dart:io)",
-		"appcode":          "ZHTK",
-		"Accept-Encoding":  "gzip",
-		"model":            "22041216C",
-		"buildnumber":      "10005",
-		"ostype":           "Android",
-		"apptype":          "ZHTK",
-		"Content-Type":     "application/json",
-		"platform":         "LKL",
-		"version":          "1.0.5",
-		"sysversion":       "{baseOS: , securityPatch: 2025-05-05, sdkInt: 35, release: 15, codename: REL, previewSdkInt: 0, incremental: 1171}",
-		"request-id":       requestID(),
-	} {
-		req.Header.Set(key, value)
-	}
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	raw, err := readResponseBody(resp)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode/100 != 2 {
-		return nil, fmt.Errorf("getinfo: HTTP %s: %s", resp.Status, raw)
-	}
-
-	var data any
-	if err := json.Unmarshal(raw, &data); err != nil {
-		return nil, fmt.Errorf("getinfo: invalid JSON: %w", err)
-	}
-	return data, nil
+	url := c.getInfoURL + "?customerNameOrExtCustomerNo=" + customerNameOrExtCustomerNo + "&status=&pageNum=1&pageSize=10"
+	return httpx.JSON[any](ctx, c.httpClient, http.MethodPost, url, bytes.NewBufferString("{}"), map[string]string{
+		"Authorization":   "bearer " + token,
+		"User-Agent":      "Dart/3.4 (dart:io)",
+		"appcode":         "ZHTK",
+		"Accept-Encoding": "gzip",
+		"model":           "22041216C",
+		"buildnumber":     "10005",
+		"ostype":          "Android",
+		"apptype":         "ZHTK",
+		"Content-Type":    "application/json",
+		"platform":        "LKL",
+		"version":         "1.0.5",
+		"sysversion":      "{baseOS: , securityPatch: 2025-05-05, sdkInt: 35, release: 15, codename: REL, previewSdkInt: 0, incremental: 1171}",
+		"request-id":      requestID(),
+	})
 }
 
 func requestID() string {
@@ -109,67 +73,12 @@ func requestID() string {
 	return s[:8] + "-" + s[8:12] + "-" + s[12:16] + "-" + s[16:20] + "-" + s[20:]
 }
 
-func readResponseBody(resp *http.Response) ([]byte, error) {
-	if resp.Header.Get("Content-Encoding") != "gzip" {
-		return io.ReadAll(resp.Body)
-	}
-	gz, err := gzip.NewReader(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	defer gz.Close()
-	return io.ReadAll(gz)
-}
-
 // Login 以密码模式登录。agent 为空时不发送 changeAgentNo。
 func (c *Client) Login(ctx context.Context, user, pass, agent string) (map[string]any, error) {
-	var body bytes.Buffer
-	w := multipart.NewWriter(&body)
-	for _, field := range []struct{ key, value string }{
-		{"username", user},
-		{"password", pass},
-		{"grant_type", "password"},
-		{"client_id", c.clientID},
-		{"client_secret", c.clientSecret},
-	} {
-		if err := w.WriteField(field.key, field.value); err != nil {
-			return nil, err
-		}
-	}
+	fields := []httpx.Field{{"username", user}, {"password", pass}, {"grant_type", "password"}, {"client_id", c.clientID}, {"client_secret", c.clientSecret}}
 	if agent != "" {
-		if err := w.WriteField("changeAgentNo", agent); err != nil {
-			return nil, err
-		}
+		fields = append(fields, httpx.Field{"changeAgentNo", agent})
 	}
-	if err := w.Close(); err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.loginURL, &body)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", w.FormDataContentType())
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	raw, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode/100 != 2 {
-		return nil, fmt.Errorf("login: HTTP %s: %s", resp.Status, raw)
-	}
-
-	var data map[string]any
-	if err := json.Unmarshal(raw, &data); err != nil {
-		return nil, fmt.Errorf("login: invalid JSON: %w", err)
-	}
-	if _, ok := data["access_token"]; !ok {
-		return nil, fmt.Errorf("login failed: %s", raw)
-	}
-	return data, nil
+	body, contentType := httpx.Multipart(fields)
+	return httpx.JSON[map[string]any](ctx, c.httpClient, http.MethodPost, c.loginURL, body, map[string]string{"Content-Type": contentType})
 }

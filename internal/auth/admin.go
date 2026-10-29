@@ -1,14 +1,11 @@
 package auth
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
-	"io"
-	"mime/multipart"
 	"net/http"
 	"time"
+
+	"ztk-auto/internal/httpx"
 )
 
 const (
@@ -34,48 +31,11 @@ func NewAdminClient() *AdminClient {
 
 // Login 以管理端账号、密码和 operateId 获取 access token。
 func (c *AdminClient) Login(ctx context.Context, username, password, operateID string) (map[string]any, error) {
-	var body bytes.Buffer
-	w := multipart.NewWriter(&body)
-	for _, field := range []struct{ key, value string }{
-		{"username", username},
-		{"password", password},
-		{"operateId", operateID},
-		{"grant_type", "password"},
-	} {
-		if err := w.WriteField(field.key, field.value); err != nil {
-			return nil, err
-		}
-	}
-	if err := w.Close(); err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.loginURL, &body)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Authorization", c.basicAuth)
-	req.Header.Set("Content-Type", w.FormDataContentType())
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	raw, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode/100 != 2 {
-		return nil, fmt.Errorf("admin login: HTTP %s: %s", resp.Status, raw)
-	}
-
-	var result map[string]any
-	if err := json.Unmarshal(raw, &result); err != nil {
-		return nil, fmt.Errorf("admin login: invalid JSON: %w", err)
-	}
-	if _, ok := result["access_token"]; !ok {
-		return nil, fmt.Errorf("admin login: 未返回 access_token: %s", raw)
-	}
-	return result, nil
+	body, contentType := httpx.Multipart([]httpx.Field{
+		{"username", username}, {"password", password},
+		{"operateId", operateID}, {"grant_type", "password"},
+	})
+	return httpx.JSON[map[string]any](ctx, c.httpClient, http.MethodPost, c.loginURL, body, map[string]string{
+		"Authorization": c.basicAuth, "Content-Type": contentType,
+	})
 }
