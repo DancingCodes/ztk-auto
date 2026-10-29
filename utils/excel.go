@@ -16,7 +16,7 @@ func ExportExcel(results []map[string]any) error {
 		"商户号", "商户名称", "商户类型",
 		"机具序列号", "联系人", "开通时间",
 		"激活时间", "商户状态", "产品类型",
-		"活动类型", "进件来源", "失效原因",
+		"活动类型", "进件来源", "失效原因", "是否首台",
 	}
 	_ = excel.SetSheetRow(sheet, "A1", &headers)
 	headerStyle, _ := excel.NewStyle(&excelize.Style{
@@ -35,7 +35,7 @@ func ExportExcel(results []map[string]any) error {
 		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
 		Border:    []excelize.Border{{Type: "bottom", Color: "D9E2F3", Style: 1}},
 	})
-	_ = excel.SetCellStyle(sheet, "A1", "O1", headerStyle)
+	_ = excel.SetCellStyle(sheet, "A1", "P1", headerStyle)
 	_ = excel.SetRowHeight(sheet, 1, 32)
 	_ = excel.SetColWidth(sheet, "A", "A", 14)
 	_ = excel.SetColWidth(sheet, "B", "B", 14)
@@ -51,26 +51,33 @@ func ExportExcel(results []map[string]any) error {
 	_ = excel.SetColWidth(sheet, "M", "M", 28)
 	_ = excel.SetColWidth(sheet, "N", "N", 14)
 	_ = excel.SetColWidth(sheet, "O", "O", 22)
+	_ = excel.SetColWidth(sheet, "P", "P", 12)
 
 	row := 2
 	for _, result := range results {
 		records := result["data"].(map[string]any)["records"].([]any)
 		for _, value := range records {
 			record := value.(map[string]any)
+			appData := record["appData"].([]any)
+			isFirst := "否"
+			if appData[0].(map[string]any)["posAndIdentityFirst"] == true {
+				isFirst = "是"
+			}
 			values := []any{
 				record["agentNo"], record["fullName"], record["agentNature"],
 				record["externalCustomerNo"], record["customerName"], record["channelType"],
 				record["posSn"], record["contactManName"], record["openTime"],
 				record["activityTime"], record["customerStatus"], record["posType"],
-				record["activityTypeName"], record["merchantSource"], record["failReason"],
+				record["activityTypeName"], record["merchantSource"], record["failReason"], isFirst,
 			}
 			_ = excel.SetSheetRow(sheet, fmt.Sprintf("A%d", row), &values)
-			_ = excel.SetCellStyle(sheet, fmt.Sprintf("A%d", row), fmt.Sprintf("O%d", row), bodyStyle)
+			_ = excel.SetCellStyle(sheet, fmt.Sprintf("A%d", row), fmt.Sprintf("P%d", row), bodyStyle)
 			_ = excel.SetCellStyle(sheet, fmt.Sprintf("A%d", row), fmt.Sprintf("A%d", row), centerStyle)
 			_ = excel.SetCellStyle(sheet, fmt.Sprintf("C%d", row), fmt.Sprintf("D%d", row), centerStyle)
 			_ = excel.SetCellStyle(sheet, fmt.Sprintf("F%d", row), fmt.Sprintf("F%d", row), centerStyle)
 			_ = excel.SetCellStyle(sheet, fmt.Sprintf("I%d", row), fmt.Sprintf("L%d", row), centerStyle)
 			_ = excel.SetCellStyle(sheet, fmt.Sprintf("N%d", row), fmt.Sprintf("N%d", row), centerStyle)
+			_ = excel.SetCellStyle(sheet, fmt.Sprintf("P%d", row), fmt.Sprintf("P%d", row), centerStyle)
 			_ = excel.SetRowHeight(sheet, row, 22)
 			row++
 		}

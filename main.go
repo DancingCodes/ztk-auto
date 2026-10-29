@@ -54,7 +54,7 @@ func main() {
 		partner := result["partner"].(string)
 		account, ok := appAccounts[partner]
 		if !ok {
-			debug, _ := json.MarshalIndent(map[string]any{"partner": partner, "error": "未找到 App 账号配置"}, "", "  ")
+			debug, _ := json.MarshalIndent(map[string]any{"error": "未找到 App 账号配置", "partner": partner}, "", "  ")
 			fmt.Println(string(debug))
 			return
 		}
@@ -81,7 +81,7 @@ func main() {
 				fmt.Println(string(debug))
 				return
 			}
-			record["appData"] = appData
+			record["appData"] = appResult["records"].([]any)
 		}
 	}
 
