@@ -11,10 +11,19 @@ import (
 )
 
 func main() {
+	startedAt := time.Now()
+	fmt.Println("开始时间:", startedAt.Format("2006-01-02 15:04:05"))
+	defer func() {
+		endedAt := time.Now()
+		fmt.Println("结束时间:", endedAt.Format("2006-01-02 15:04:05"))
+		fmt.Println("用时:", endedAt.Sub(startedAt))
+	}()
+
 	// PCToken
 	pc := ztk.LoadPC("config/pc.json")
 	pcLogin := ztk.PCLogin(context.Background(), pc.Username, pc.Password, pc.OperateID)
 	pcToken, _ := pcLogin["access_token"].(string)
+
 	if pcToken == "" {
 		result, _ := json.MarshalIndent(pcLogin, "", "  ")
 		fmt.Println(string(result))
@@ -32,9 +41,7 @@ func main() {
 	}
 
 	for _, result := range results {
-		pcData, ok := result["data"].(map[string]any)
-		_, hasRecords := pcData["records"].([]any)
-		if !ok || !hasRecords {
+		if _, ok := result["data"].(map[string]any)["records"].([]any); !ok {
 			response, _ := json.MarshalIndent(result, "", "  ")
 			fmt.Println(string(response))
 			return
@@ -45,19 +52,44 @@ func main() {
 	appAccounts := ztk.AppAccountsByServiceProvider(ztk.LoadAppAccounts("config/app.json"))
 	for _, result := range results {
 		partner := result["partner"].(string)
-		account := appAccounts[partner]
+		account, ok := appAccounts[partner]
+		if !ok {
+			debug, _ := json.MarshalIndent(map[string]any{"partner": partner, "error": "未找到 App 账号配置"}, "", "  ")
+			fmt.Println(string(debug))
+			return
+		}
 		appLogin := ztk.AppLogin(context.Background(), account.Phone, account.Password, account.ServiceProviderNo)
 		appToken, _ := appLogin["access_token"].(string)
+		if appToken == "" {
+			debug, _ := json.MarshalIndent(map[string]any{"partner": partner, "appLogin": appLogin}, "", "  ")
+			fmt.Println(string(debug))
+			return
+		}
 		records := result["data"].(map[string]any)["records"].([]any)
 		for _, value := range records {
 			record := value.(map[string]any)
-			externalCustomerNo, _ := record["externalCustomerNo"].(string)
-			record["appData"] = ztk.AppFindCustomer(context.Background(), appToken, externalCustomerNo)
+			externalCustomerNo := record["externalCustomerNo"].(string)
+			appData := ztk.AppFindCustomer(context.Background(), appToken, externalCustomerNo)
+			appResult, ok := appData.(map[string]any)
+			if !ok {
+				debug, _ := json.MarshalIndent(map[string]any{"partner": partner, "externalCustomerNo": externalCustomerNo, "appData": appData}, "", "  ")
+				fmt.Println(string(debug))
+				return
+			}
+			if _, ok := appResult["records"].([]any); !ok {
+				debug, _ := json.MarshalIndent(map[string]any{"partner": partner, "externalCustomerNo": externalCustomerNo, "appData": appData}, "", "  ")
+				fmt.Println(string(debug))
+				return
+			}
+			record["appData"] = appData
 		}
 	}
 
-	// 打印数据 / 到处execl
 	result, _ := json.MarshalIndent(results, "", "  ")
 	fmt.Println(string(result))
-	utils.ExportExcel(results)
+
+	if err := utils.ExportExcel(results); err != nil {
+		fmt.Println("导出 Excel 失败:", err)
+		return
+	}
 }

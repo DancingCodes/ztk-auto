@@ -7,7 +7,7 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-func ExportExcel(results []map[string]any) {
+func ExportExcel(results []map[string]any) error {
 	excel := excelize.NewFile()
 	sheet := "商户列表"
 	_ = excel.SetSheetName(excel.GetSheetName(0), sheet)
@@ -76,6 +76,9 @@ func ExportExcel(results []map[string]any) {
 		}
 	}
 	fileName := time.Now().Format("200601021504") + "-商户查询导出.xlsx"
-	_ = excel.SaveAs(fileName)
+	if err := excel.SaveAs(fileName); err != nil {
+		return err
+	}
 	fmt.Println("已生成 " + fileName)
+	return nil
 }
