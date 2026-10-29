@@ -1,0 +1,8 @@
+{
+  "phoneAccounts": [
+    {
+      "phone": "手机号",
+      "password": "密码"
+    }
+  ]
+}
