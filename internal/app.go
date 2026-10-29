@@ -17,36 +17,36 @@ import (
 
 const (
 	appLoginURL     = "https://htkapi.lakala.com/auth/oauth/token"
-	appUserInfoURL  = "https://zhtk.lklshuzikeji.com/auth/user/operator/userInfo/zhtk/"
 	appGetInfoURL   = "https://tkapi.lakala.com/ztkapi/customer"
 	appClientID     = "zhtk"
 	appClientSecret = "prKTcg0iN46omMAF"
 )
 
-type PhoneAccount struct {
-	Phone    string `json:"phone"`
-	Password string `json:"password"`
+type AppAccount struct {
+	Phone             string `json:"phone"`
+	Password          string `json:"password"`
+	ServiceProviderNo string `json:"serviceProviderNo"`
 }
 
-func LoadPhoneAccounts(path string) []PhoneAccount {
+func LoadAppAccounts(path string) []AppAccount {
 	raw, _ := os.ReadFile(path)
 	var data struct {
-		PhoneAccounts []PhoneAccount `json:"phoneAccounts"`
+		AppAccounts []AppAccount `json:"appAccounts"`
 	}
 	_ = json.Unmarshal(raw, &data)
-	return data.PhoneAccounts
+	return data.AppAccounts
 }
 
-func PhoneAccountsByPhone(accounts []PhoneAccount) map[string]PhoneAccount {
-	items := make(map[string]PhoneAccount, len(accounts))
+func AppAccountsByPhone(accounts []AppAccount) map[string]AppAccount {
+	items := make(map[string]AppAccount, len(accounts))
 	for _, item := range accounts {
 		items[item.Phone] = item
 	}
 	return items
 }
 
-func AppLogin(ctx context.Context, phone, password string) map[string]any {
-	fields := [][2]string{{"username", phone}, {"password", password}, {"grant_type", "password"}, {"client_id", appClientID}, {"client_secret", appClientSecret}, {"changeAgentNo", AppUserNo(ctx, phone)}}
+func AppLogin(ctx context.Context, phone, password, serviceProviderNo string) map[string]any {
+	fields := [][2]string{{"username", phone}, {"password", password}, {"grant_type", "password"}, {"client_id", appClientID}, {"client_secret", appClientSecret}, {"changeAgentNo", serviceProviderNo}}
 	var body bytes.Buffer
 	w := multipart.NewWriter(&body)
 	for _, field := range fields {
@@ -61,21 +61,6 @@ func AppLogin(ctx context.Context, phone, password string) map[string]any {
 	data := map[string]any{}
 	_ = json.Unmarshal(raw, &data)
 	return data
-}
-
-func AppUserNo(ctx context.Context, phone string) string {
-	url := appUserInfoURL + phone + "?appCode=ZHTK&loginAccount=" + phone
-	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	resp, _ := appHTTPClient().Do(req)
-	defer resp.Body.Close()
-	raw := appBody(resp)
-	var data []map[string]any
-	_ = json.Unmarshal(raw, &data)
-	if len(data) == 0 {
-		return ""
-	}
-	userNo, _ := data[0]["userNo"].(string)
-	return userNo
 }
 
 func AppGetInfo(ctx context.Context, token, customer string) any {

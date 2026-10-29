@@ -1,0 +1,9 @@
+{
+  "appAccounts": [
+    {
+      "phone": "手机号",
+      "password": "密码",
+      "serviceProviderNo": "服务商编号"
+    }
+  ]
+}

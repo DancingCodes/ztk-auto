@@ -24,26 +24,23 @@ type PCAccount struct {
 	OperateID string `json:"operateId"`
 }
 
-func LoadPCAccount(path string) PCAccount {
-	raw, _ := os.ReadFile(path)
-	var account PCAccount
-	_ = json.Unmarshal(raw, &account)
-	return account
+type PCConfig struct {
+	PCAccount
+	PCPartners []string `json:"pcPartners"`
 }
 
-func LoadPCPartners(path string) []string {
+func LoadPC(path string) PCConfig {
 	raw, _ := os.ReadFile(path)
-	var data struct {
-		PCPartners []string `json:"pcPartners"`
-	}
-	_ = json.Unmarshal(raw, &data)
-	partners := make([]string, 0, len(data.PCPartners))
-	for _, item := range data.PCPartners {
+	var config PCConfig
+	_ = json.Unmarshal(raw, &config)
+	partners := make([]string, 0, len(config.PCPartners))
+	for _, item := range config.PCPartners {
 		if value := strings.TrimSpace(item); value != "" {
 			partners = append(partners, value)
 		}
 	}
-	return partners
+	config.PCPartners = partners
+	return config
 }
 
 func PCLogin(ctx context.Context, username, password, operateID string) map[string]any {
