@@ -2,24 +2,75 @@ package internal
 
 import (
 	"context"
+	"time"
 )
 
+func GetTransactions(ctx context.Context, date string) []map[string]any {
+	if date == "" {
+		date = time.Now().AddDate(0, 0, -1).Format("2006-01-02")
+	}
+
+	accounts := LoadAccounts("config/accounts.json")
+	login := PCLogin(ctx, accounts.Admin.Username, accounts.Admin.Password, accounts.Admin.OperateID)
+	token, _ := login["access_token"].(string)
+	if token == "" {
+		return nil
+	}
+
+	var results []map[string]any
+	for _, partner := range accounts.Partners {
+		results = append(results, map[string]any{
+			"partner": partner.ServiceProviderNo,
+			"data":    PCFindTransactions(ctx, token, date, partner.ServiceProviderNo),
+		})
+	}
+	return results
+}
+
+func BuildTransactionExport(ctx context.Context, date string) ([]byte, error) {
+	results := GetTransactions(ctx, date)
+	if results == nil {
+		return BuildMessageExcel("PC登录失败")
+	}
+
+	for _, result := range results {
+		response, ok := result["data"].(map[string]any)
+		if !ok {
+			return BuildMessageExcel("交易列表获取失败：" + result["partner"].(string))
+		}
+		data, ok := response["data"].(map[string]any)
+		if !ok {
+			return BuildMessageExcel("交易列表获取失败：" + result["partner"].(string))
+		}
+		if _, ok := data["records"].([]any); !ok {
+			return BuildMessageExcel("交易列表获取失败：" + result["partner"].(string))
+		}
+	}
+
+	file, err := BuildTransactionExcel(results)
+	if err != nil {
+		return BuildMessageExcel("交易列表导出失败")
+	}
+	return file, nil
+}
+
 func BuildMerchantExport(ctx context.Context, date string) ([]byte, error) {
-	// Pc登录
-	pc := LoadPC("config/pc.json")
-	pcLogin := PCLogin(ctx, pc.Username, pc.Password, pc.OperateID)
+	// Admin登录
+	accounts := LoadAccounts("config/accounts.json")
+	pcLogin := PCLogin(ctx, accounts.Admin.Username, accounts.Admin.Password, accounts.Admin.OperateID)
 	pcToken, _ := pcLogin["access_token"].(string)
 	if pcToken == "" {
 		return BuildMessageExcel("PC登录失败")
 	}
 	customerStatus := PCGetCustomerStatus(ctx, pcToken)
 
-	// Pc商户信息
+	// Admin商户信息
 	var results []map[string]any
-	for _, partner := range pc.PCPartners {
+	for _, partner := range accounts.Partners {
 		results = append(results, map[string]any{
-			"partner": partner,
-			"data":    PCFindChange(ctx, pcToken, date, partner),
+			"partner": partner.ServiceProviderNo,
+			"account": partner,
+			"data":    PCFindChange(ctx, pcToken, date, partner.ServiceProviderNo),
 		})
 	}
 
@@ -53,12 +104,10 @@ func BuildMerchantExport(ctx context.Context, date string) ([]byte, error) {
 	}
 
 	// App登录 + App商户信息
-	appAccounts := AppAccountsByServiceProvider(LoadAppAccounts("config/app.json"))
 	for _, result := range results {
-		partner := result["partner"].(string)
 		records := result["data"].(map[string]any)["records"].([]any)
-		account, ok := appAccounts[partner]
-		if !ok {
+		account := result["account"].(Partner)
+		if account.Phone == "" || account.Password == "" {
 			for _, value := range records {
 				value.(map[string]any)["isFirst"] = "无账号"
 			}

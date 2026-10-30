@@ -11,7 +11,6 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -21,29 +20,6 @@ const (
 	appClientID     = "zhtk"
 	appClientSecret = "prKTcg0iN46omMAF"
 )
-
-type AppAccount struct {
-	Phone             string `json:"phone"`
-	Password          string `json:"password"`
-	ServiceProviderNo string `json:"serviceProviderNo"`
-}
-
-func LoadAppAccounts(path string) []AppAccount {
-	raw, _ := os.ReadFile(path)
-	var data struct {
-		AppAccounts []AppAccount `json:"appAccounts"`
-	}
-	_ = json.Unmarshal(raw, &data)
-	return data.AppAccounts
-}
-
-func AppAccountsByServiceProvider(accounts []AppAccount) map[string]AppAccount {
-	items := make(map[string]AppAccount, len(accounts))
-	for _, item := range accounts {
-		items[item.ServiceProviderNo] = item
-	}
-	return items
-}
 
 func AppLogin(ctx context.Context, phone, password, serviceProviderNo string) map[string]any {
 	fields := [][2]string{{"username", phone}, {"password", password}, {"grant_type", "password"}, {"client_id", appClientID}, {"client_secret", appClientSecret}, {"changeAgentNo", serviceProviderNo}}

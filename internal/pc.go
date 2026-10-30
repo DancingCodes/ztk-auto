@@ -8,7 +8,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -17,30 +16,30 @@ const (
 	pcBasicAuth = "Basic bHN5OlNSNjJRc1lLaTFsMDFJZUI="
 	pcChangeURL = "https://tkapi.lakala.com/ztkapi/customer/findChange"
 	pcStatusURL = "https://tkapi.lakala.com/ztkapi/dictionary?dictTypeId=customerStatus"
+	pcTransURL  = "https://tkapi.lakala.com/ztkapi/trans/list"
 )
 
-type PCAccount struct {
+type Admin struct {
 	Username  string `json:"username"`
 	Password  string `json:"password"`
 	OperateID string `json:"operateId"`
 }
 
-type PCConfig struct {
-	PCAccount
-	PCPartners []string `json:"pcPartners"`
+type Accounts struct {
+	Admin    Admin     `json:"admin"`
+	Partners []Partner `json:"partners"`
 }
 
-func LoadPC(path string) PCConfig {
+type Partner struct {
+	ServiceProviderNo string `json:"serviceProviderNo"`
+	Phone             string `json:"phone"`
+	Password          string `json:"password"`
+}
+
+func LoadAccounts(path string) Accounts {
 	raw, _ := os.ReadFile(path)
-	var config PCConfig
+	var config Accounts
 	_ = json.Unmarshal(raw, &config)
-	partners := make([]string, 0, len(config.PCPartners))
-	for _, item := range config.PCPartners {
-		if value := strings.TrimSpace(item); value != "" {
-			partners = append(partners, value)
-		}
-	}
-	config.PCPartners = partners
 	return config
 }
 
@@ -67,6 +66,21 @@ func PCLogin(ctx context.Context, username, password, operateID string) map[stri
 
 func PCFindChange(ctx context.Context, token, date, agentNo string) any {
 	url := pcChangeURL + "?startTime=" + date + "&endTime=" + date + "&agentNo=" + agentNo + "&pageNum=1&pageSize=999"
+	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	req.Header.Set("Authorization", "bearer "+token)
+	resp, _ := pcHTTPClient().Do(req)
+	if resp == nil {
+		return map[string]any{}
+	}
+	defer resp.Body.Close()
+	raw, _ := io.ReadAll(resp.Body)
+	var data any
+	_ = json.Unmarshal(raw, &data)
+	return data
+}
+
+func PCFindTransactions(ctx context.Context, token, date, agentNo string) any {
+	url := pcTransURL + "?transStartTime=" + date + "+00:00:00&transEndTime=" + date + "+23:59:59&agentNo=" + agentNo + "&pageNum=1&pageSize=999"
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	req.Header.Set("Authorization", "bearer "+token)
 	resp, _ := pcHTTPClient().Do(req)
