@@ -12,6 +12,7 @@ func BuildMerchantExport(ctx context.Context, date string) ([]byte, error) {
 	if pcToken == "" {
 		return BuildMessageExcel("PC登录失败")
 	}
+	customerStatus := PCGetCustomerStatus(ctx, pcToken)
 
 	// Pc商户信息
 	var results []map[string]any
@@ -29,6 +30,25 @@ func BuildMerchantExport(ctx context.Context, date string) ([]byte, error) {
 		}
 		if _, ok := data["records"].([]any); !ok {
 			return BuildMessageExcel("PC商户列表获取失败：" + result["partner"].(string))
+		}
+	}
+
+	for _, result := range results {
+		records := result["data"].(map[string]any)["records"].([]any)
+		for _, value := range records {
+			record := value.(map[string]any)
+			if name := accountType[record["agentNature"].(string)]; name != "" {
+				record["agentNature"] = name
+			}
+			if name := merchantType[record["channelType"].(string)]; name != "" {
+				record["channelType"] = name
+			}
+			if name := merchantSource[record["merchantSource"].(string)]; name != "" {
+				record["merchantSource"] = name
+			}
+			if name := customerStatus[record["customerStatus"].(string)]; name != "" {
+				record["customerStatus"] = name
+			}
 		}
 	}
 
@@ -76,4 +96,20 @@ func BuildMerchantExport(ctx context.Context, date string) ([]byte, error) {
 		return BuildMessageExcel("商户列表导出失败")
 	}
 	return file, nil
+}
+
+var accountType = map[string]string{
+	"PERSONAL":           "个人",
+	"ZHTK_OPERATE_CENTER": "运营中心",
+}
+
+var merchantType = map[string]string{
+	"TP_MERCHANT": "企业商户",
+	"TP_PERSONAL": "个人商户",
+}
+
+var merchantSource = map[string]string{
+	"AGENT": "服务商平台",
+	"APP":   "APP平台",
+	"H5":    "H5平台",
 }

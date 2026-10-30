@@ -16,6 +16,7 @@ const (
 	pcLoginURL  = "https://tkapi.lakala.com/auth/oauth/token"
 	pcBasicAuth = "Basic bHN5OlNSNjJRc1lLaTFsMDFJZUI="
 	pcChangeURL = "https://tkapi.lakala.com/ztkapi/customer/findChange"
+	pcStatusURL = "https://tkapi.lakala.com/ztkapi/dictionary?dictTypeId=customerStatus"
 )
 
 type PCAccount struct {
@@ -77,6 +78,24 @@ func PCFindChange(ctx context.Context, token, date, agentNo string) any {
 	var data any
 	_ = json.Unmarshal(raw, &data)
 	return data
+}
+
+func PCGetCustomerStatus(ctx context.Context, token string) map[string]string {
+	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, pcStatusURL, nil)
+	req.Header.Set("Authorization", "bearer "+token)
+	resp, _ := pcHTTPClient().Do(req)
+	if resp == nil {
+		return map[string]string{}
+	}
+	defer resp.Body.Close()
+	raw, _ := io.ReadAll(resp.Body)
+	var items []map[string]any
+	_ = json.Unmarshal(raw, &items)
+	status := map[string]string{}
+	for _, item := range items {
+		status[item["dictId"].(string)] = item["dictName"].(string)
+	}
+	return status
 }
 
 func pcHTTPClient() *http.Client { return &http.Client{Timeout: 25 * time.Second} }
