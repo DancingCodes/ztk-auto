@@ -49,21 +49,7 @@ func BuildExcel(results []map[string]any) ([]byte, error) {
 	})
 	_ = excel.SetCellStyle(sheet, "A1", "P1", headerStyle)
 	_ = excel.SetRowHeight(sheet, 1, 32)
-	_ = excel.SetColWidth(sheet, "A", "A", 14)
-	_ = excel.SetColWidth(sheet, "B", "B", 14)
-	_ = excel.SetColWidth(sheet, "C", "C", 14)
-	_ = excel.SetColWidth(sheet, "D", "D", 21)
-	_ = excel.SetColWidth(sheet, "E", "E", 28)
-	_ = excel.SetColWidth(sheet, "F", "F", 18)
-	_ = excel.SetColWidth(sheet, "G", "G", 24)
-	_ = excel.SetColWidth(sheet, "H", "H", 14)
-	_ = excel.SetColWidth(sheet, "I", "J", 20)
-	_ = excel.SetColWidth(sheet, "K", "K", 12)
-	_ = excel.SetColWidth(sheet, "L", "L", 14)
-	_ = excel.SetColWidth(sheet, "M", "M", 28)
-	_ = excel.SetColWidth(sheet, "N", "N", 14)
-	_ = excel.SetColWidth(sheet, "O", "O", 22)
-	_ = excel.SetColWidth(sheet, "P", "P", 12)
+	_ = excel.SetColWidth(sheet, "A", "P", 24)
 
 	row := 2
 	for _, result := range results {
