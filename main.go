@@ -52,41 +52,39 @@ func main() {
 	appAccounts := ztk.AppAccountsByServiceProvider(ztk.LoadAppAccounts("config/app.json"))
 	for _, result := range results {
 		partner := result["partner"].(string)
+		records := result["data"].(map[string]any)["records"].([]any)
 		account, ok := appAccounts[partner]
 		if !ok {
-			debug, _ := json.MarshalIndent(map[string]any{"error": "未找到 App 账号配置", "partner": partner}, "", "  ")
-			fmt.Println(string(debug))
-			return
+			for _, value := range records {
+				value.(map[string]any)["isFirst"] = "无账号"
+				fmt.Println(value)
+			}
+			continue
 		}
 		appLogin := ztk.AppLogin(context.Background(), account.Phone, account.Password, account.ServiceProviderNo)
 		appToken, _ := appLogin["access_token"].(string)
 		if appToken == "" {
-			debug, _ := json.MarshalIndent(map[string]any{"partner": partner, "appLogin": appLogin}, "", "  ")
-			fmt.Println(string(debug))
-			return
+			for _, value := range records {
+				value.(map[string]any)["isFirst"] = "账密不正确"
+			}
+			continue
 		}
-		records := result["data"].(map[string]any)["records"].([]any)
 		for _, value := range records {
 			record := value.(map[string]any)
 			externalCustomerNo := record["externalCustomerNo"].(string)
 			appData := ztk.AppFindCustomer(context.Background(), appToken, externalCustomerNo)
 			appResult, ok := appData.(map[string]any)
 			if !ok {
-				debug, _ := json.MarshalIndent(map[string]any{"partner": partner, "externalCustomerNo": externalCustomerNo, "appData": appData}, "", "  ")
-				fmt.Println(string(debug))
-				return
+				record["isFirst"] = "接口返回异常"
+				continue
 			}
 			if _, ok := appResult["records"].([]any); !ok {
-				debug, _ := json.MarshalIndent(map[string]any{"partner": partner, "externalCustomerNo": externalCustomerNo, "appData": appData}, "", "  ")
-				fmt.Println(string(debug))
-				return
+				record["isFirst"] = "无商户数据"
+				continue
 			}
 			record["appData"] = appResult["records"].([]any)
 		}
 	}
-
-	result, _ := json.MarshalIndent(results, "", "  ")
-	fmt.Println(string(result))
 
 	if err := utils.ExportExcel(results); err != nil {
 		fmt.Println("导出 Excel 失败:", err)

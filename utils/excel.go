@@ -58,10 +58,13 @@ func ExportExcel(results []map[string]any) error {
 		records := result["data"].(map[string]any)["records"].([]any)
 		for _, value := range records {
 			record := value.(map[string]any)
-			appData := record["appData"].([]any)
-			isFirst := "否"
-			if appData[0].(map[string]any)["posAndIdentityFirst"] == true {
-				isFirst = "是"
+			isFirst, _ := record["isFirst"].(string)
+			if isFirst == "" {
+				appData := record["appData"].([]any)
+				isFirst = "否"
+				if appData[0].(map[string]any)["posAndIdentityFirst"] == true {
+					isFirst = "是"
+				}
 			}
 			values := []any{
 				record["agentNo"], record["fullName"], record["agentNature"],
