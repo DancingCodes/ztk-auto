@@ -6,19 +6,6 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-func BuildMessageExcel(message string) ([]byte, error) {
-	excel := excelize.NewFile()
-	sheet := "提示"
-	_ = excel.SetSheetName(excel.GetSheetName(0), sheet)
-	_ = excel.SetCellValue(sheet, "A1", message)
-	_ = excel.SetColWidth(sheet, "A", "A", 36)
-	buffer, err := excel.WriteToBuffer()
-	if err != nil {
-		return nil, err
-	}
-	return buffer.Bytes(), nil
-}
-
 func BuildExcel(results []map[string]any) ([]byte, error) {
 	excel := excelize.NewFile()
 	sheet := "商户列表"

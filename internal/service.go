@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"errors"
 )
 
 func GetTransactions(ctx context.Context, token, date string, partners []Partner) []map[string]any {
@@ -20,21 +21,21 @@ func BuildTransactionExport(ctx context.Context, date string) ([]byte, error) {
 	login := PCLogin(ctx, accounts.Admin.Username, accounts.Admin.Password, accounts.Admin.OperateID)
 	token, _ := login["access_token"].(string)
 	if token == "" {
-		return BuildMessageExcel("PC登录失败")
+		return nil, errors.New("PC登录失败")
 	}
 	results := GetTransactions(ctx, token, date, accounts.Partners)
 
 	for _, result := range results {
 		response, ok := result["data"].(map[string]any)
 		if !ok {
-			return BuildMessageExcel("交易列表获取失败：" + result["partner"].(string))
+			return nil, errors.New("交易列表获取失败：" + result["partner"].(string))
 		}
 		data, ok := response["data"].(map[string]any)
 		if !ok {
-			return BuildMessageExcel("交易列表获取失败：" + result["partner"].(string))
+			return nil, errors.New("交易列表获取失败：" + result["partner"].(string))
 		}
 		if _, ok := data["records"].([]any); !ok {
-			return BuildMessageExcel("交易列表获取失败：" + result["partner"].(string))
+			return nil, errors.New("交易列表获取失败：" + result["partner"].(string))
 		}
 	}
 
@@ -59,7 +60,7 @@ func BuildTransactionExport(ctx context.Context, date string) ([]byte, error) {
 
 	file, err := BuildTransactionExcel(results)
 	if err != nil {
-		return BuildMessageExcel("交易列表导出失败")
+		return nil, errors.New("交易列表导出失败")
 	}
 	return file, nil
 }
@@ -70,7 +71,7 @@ func BuildMerchantExport(ctx context.Context, date string) ([]byte, error) {
 	pcLogin := PCLogin(ctx, accounts.Admin.Username, accounts.Admin.Password, accounts.Admin.OperateID)
 	pcToken, _ := pcLogin["access_token"].(string)
 	if pcToken == "" {
-		return BuildMessageExcel("PC登录失败")
+		return nil, errors.New("PC登录失败")
 	}
 	customerStatus := PCGetCustomerStatus(ctx, pcToken)
 
@@ -87,10 +88,10 @@ func BuildMerchantExport(ctx context.Context, date string) ([]byte, error) {
 	for _, result := range results {
 		data, ok := result["data"].(map[string]any)
 		if !ok {
-			return BuildMessageExcel("PC商户列表获取失败：" + result["partner"].(string))
+			return nil, errors.New("PC商户列表获取失败：" + result["partner"].(string))
 		}
 		if _, ok := data["records"].([]any); !ok {
-			return BuildMessageExcel("PC商户列表获取失败：" + result["partner"].(string))
+			return nil, errors.New("PC商户列表获取失败：" + result["partner"].(string))
 		}
 	}
 
@@ -152,7 +153,7 @@ func BuildMerchantExport(ctx context.Context, date string) ([]byte, error) {
 	// 导出
 	file, err := BuildExcel(results)
 	if err != nil {
-		return BuildMessageExcel("商户列表导出失败")
+		return nil, errors.New("商户列表导出失败")
 	}
 	return file, nil
 }

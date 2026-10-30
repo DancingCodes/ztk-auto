@@ -15,7 +15,7 @@ func Handler() http.Handler {
 
 func health(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		writeError(w, "请求方式错误")
 		return
 	}
 	w.Write([]byte("ok"))
@@ -23,7 +23,7 @@ func health(w http.ResponseWriter, r *http.Request) {
 
 func merchantExport(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		writeError(w, "请求方式错误")
 		return
 	}
 
@@ -32,7 +32,11 @@ func merchantExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	file, _ := BuildMerchantExport(r.Context(), date)
+	file, err := BuildMerchantExport(r.Context(), date)
+	if err != nil {
+		writeError(w, err.Error())
+		return
+	}
 	fileName := time.Now().Format("200601021504") + "-商户查询导出.xlsx"
 	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 	w.Header().Set("Content-Disposition", "attachment; filename=\""+fileName+"\"")
@@ -41,7 +45,7 @@ func merchantExport(w http.ResponseWriter, r *http.Request) {
 
 func transactionExport(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		writeError(w, "请求方式错误")
 		return
 	}
 
@@ -50,7 +54,11 @@ func transactionExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	file, _ := BuildTransactionExport(r.Context(), date)
+	file, err := BuildTransactionExport(r.Context(), date)
+	if err != nil {
+		writeError(w, err.Error())
+		return
+	}
 	fileName := time.Now().Format("200601021504") + "-交易查询导出.xlsx"
 	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 	w.Header().Set("Content-Disposition", "attachment; filename=\""+fileName+"\"")
@@ -63,8 +71,14 @@ func exportDate(w http.ResponseWriter, r *http.Request) (string, bool) {
 		date = time.Now().AddDate(0, 0, -1).Format("2006-01-02")
 	}
 	if _, err := time.Parse("2006-01-02", date); err != nil {
-		http.Error(w, "date 格式应为 YYYY-MM-DD", http.StatusBadRequest)
+		writeError(w, "date 格式应为 YYYY-MM-DD")
 		return "", false
 	}
 	return date, true
+}
+
+func writeError(w http.ResponseWriter, message string) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Write([]byte(message))
 }
