@@ -15,7 +15,7 @@ const (
 	pcLoginURL  = "https://tkapi.lakala.com/auth/oauth/token"
 	pcBasicAuth = "Basic bHN5OlNSNjJRc1lLaTFsMDFJZUI="
 	pcChangeURL = "https://tkapi.lakala.com/ztkapi/customer/findChange"
-	pcStatusURL = "https://tkapi.lakala.com/ztkapi/dictionary?dictTypeId=customerStatus"
+	pcDictionaryURL = "https://tkapi.lakala.com/ztkapi/dictionary?dictTypeId="
 	pcTransURL  = "https://tkapi.lakala.com/ztkapi/trans/list"
 )
 
@@ -94,8 +94,8 @@ func PCFindTransactions(ctx context.Context, token, date, agentNo string) any {
 	return data
 }
 
-func PCGetCustomerStatus(ctx context.Context, token string) map[string]string {
-	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, pcStatusURL, nil)
+func PCGetDictionary(ctx context.Context, token, dictTypeID string) map[string]string {
+	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, pcDictionaryURL+dictTypeID, nil)
 	req.Header.Set("Authorization", "bearer "+token)
 	resp, _ := pcHTTPClient().Do(req)
 	if resp == nil {
@@ -110,6 +110,10 @@ func PCGetCustomerStatus(ctx context.Context, token string) map[string]string {
 		status[item["dictId"].(string)] = item["dictName"].(string)
 	}
 	return status
+}
+
+func PCGetCustomerStatus(ctx context.Context, token string) map[string]string {
+	return PCGetDictionary(ctx, token, "customerStatus")
 }
 
 func pcHTTPClient() *http.Client { return &http.Client{Timeout: 25 * time.Second} }

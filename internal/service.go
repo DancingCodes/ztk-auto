@@ -2,23 +2,11 @@ package internal
 
 import (
 	"context"
-	"time"
 )
 
-func GetTransactions(ctx context.Context, date string) []map[string]any {
-	if date == "" {
-		date = time.Now().AddDate(0, 0, -1).Format("2006-01-02")
-	}
-
-	accounts := LoadAccounts("config/accounts.json")
-	login := PCLogin(ctx, accounts.Admin.Username, accounts.Admin.Password, accounts.Admin.OperateID)
-	token, _ := login["access_token"].(string)
-	if token == "" {
-		return nil
-	}
-
+func GetTransactions(ctx context.Context, token, date string, partners []Partner) []map[string]any {
 	var results []map[string]any
-	for _, partner := range accounts.Partners {
+	for _, partner := range partners {
 		results = append(results, map[string]any{
 			"partner": partner.ServiceProviderNo,
 			"data":    PCFindTransactions(ctx, token, date, partner.ServiceProviderNo),
@@ -28,10 +16,13 @@ func GetTransactions(ctx context.Context, date string) []map[string]any {
 }
 
 func BuildTransactionExport(ctx context.Context, date string) ([]byte, error) {
-	results := GetTransactions(ctx, date)
-	if results == nil {
+	accounts := LoadAccounts("config/accounts.json")
+	login := PCLogin(ctx, accounts.Admin.Username, accounts.Admin.Password, accounts.Admin.OperateID)
+	token, _ := login["access_token"].(string)
+	if token == "" {
 		return BuildMessageExcel("PC登录失败")
 	}
+	results := GetTransactions(ctx, token, date, accounts.Partners)
 
 	for _, result := range results {
 		response, ok := result["data"].(map[string]any)
@@ -44,6 +35,29 @@ func BuildTransactionExport(ctx context.Context, date string) ([]byte, error) {
 		}
 		if _, ok := data["records"].([]any); !ok {
 			return BuildMessageExcel("交易列表获取失败：" + result["partner"].(string))
+		}
+	}
+
+	appCode := PCGetDictionary(ctx, token, "appCode")
+	tranType := PCGetDictionary(ctx, token, "tranType")
+	extTransCode := PCGetDictionary(ctx, token, "extTransCode")
+	transCardType := PCGetDictionary(ctx, token, "transCardType")
+	for _, result := range results {
+		records := result["data"].(map[string]any)["data"].(map[string]any)["records"].([]any)
+		for _, value := range records {
+			record := value.(map[string]any)
+			if name := appCode[record["appCode"].(string)]; name != "" {
+				record["appCode"] = name
+			}
+			if name := tranType[record["type"].(string)]; name != "" {
+				record["type"] = name
+			}
+			if name := extTransCode[record["extTransCode"].(string)]; name != "" {
+				record["extTransCode"] = name
+			}
+			if name := transCardType[record["transCardType"].(string)]; name != "" {
+				record["transCardType"] = name
+			}
 		}
 	}
 
