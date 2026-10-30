@@ -44,7 +44,7 @@ func main() {
 		account, ok := appAccounts[partner]
 		if !ok {
 			for _, value := range records {
-				value.(map[string]any)["isFirst"] = "无账号"
+				value.(map[string]any)["isFirst"] = "App无账号"
 			}
 			continue
 		}
@@ -52,7 +52,7 @@ func main() {
 		appToken, _ := appLogin["access_token"].(string)
 		if appToken == "" {
 			for _, value := range records {
-				value.(map[string]any)["isFirst"] = "账密不正确"
+				value.(map[string]any)["isFirst"] = "App登录失败"
 			}
 			continue
 		}
@@ -62,12 +62,12 @@ func main() {
 			appData := ztk.AppFindCustomer(context.Background(), appToken, externalCustomerNo)
 			appResult, ok := appData.(map[string]any)
 			if !ok {
-				record["isFirst"] = "接口返回异常"
+				record["isFirst"] = "App商户接口返回异常"
 				continue
 			}
 			appRecords, ok := appResult["records"].([]any)
 			if !ok || len(appRecords) == 0 {
-				record["isFirst"] = "无商户数据"
+				record["isFirst"] = "App无商户数据"
 				continue
 			}
 			record["appData"] = appRecords
