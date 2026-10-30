@@ -32,11 +32,15 @@ func BuildExcel(results []map[string]any) ([]byte, error) {
 	}
 	_ = excel.SetSheetRow(sheet, "A1", &headers)
 	headerStyle, _ := excel.NewStyle(&excelize.Style{
-		Font: &excelize.Font{Bold: true},
-		Fill: excelize.Fill{Type: "pattern", Color: []string{"D9E2F3"}, Pattern: 1},
+		Font:      &excelize.Font{Bold: true},
+		Fill:      excelize.Fill{Type: "pattern", Color: []string{"D9E2F3"}, Pattern: 1},
+		Alignment: &excelize.Alignment{Horizontal: "left"},
+	})
+	bodyStyle, _ := excel.NewStyle(&excelize.Style{
+		Alignment: &excelize.Alignment{Horizontal: "left"},
 	})
 	_ = excel.SetCellStyle(sheet, "A1", "P1", headerStyle)
-	_ = excel.SetRowHeight(sheet, 1, 32)
+	_ = excel.SetRowHeight(sheet, 1, 22)
 	_ = excel.SetColWidth(sheet, "A", "P", 24)
 
 	row := 2
@@ -62,6 +66,9 @@ func BuildExcel(results []map[string]any) ([]byte, error) {
 			_ = excel.SetSheetRow(sheet, fmt.Sprintf("A%d", row), &values)
 			row++
 		}
+	}
+	if row > 2 {
+		_ = excel.SetCellStyle(sheet, "A2", fmt.Sprintf("P%d", row-1), bodyStyle)
 	}
 	buffer, err := excel.WriteToBuffer()
 	if err != nil {
