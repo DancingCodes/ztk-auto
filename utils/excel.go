@@ -2,25 +2,24 @@ package utils
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/xuri/excelize/v2"
 )
 
-func ExportMessageExcel(message string) error {
+func BuildMessageExcel(message string) ([]byte, error) {
 	excel := excelize.NewFile()
 	sheet := "提示"
 	_ = excel.SetSheetName(excel.GetSheetName(0), sheet)
 	_ = excel.SetCellValue(sheet, "A1", message)
 	_ = excel.SetColWidth(sheet, "A", "A", 36)
-	fileName := time.Now().Format("200601021504") + "-商户查询失败.xlsx"
-	if err := excel.SaveAs(fileName); err != nil {
-		return err
+	buffer, err := excel.WriteToBuffer()
+	if err != nil {
+		return nil, err
 	}
-	return nil
+	return buffer.Bytes(), nil
 }
 
-func ExportExcel(results []map[string]any) error {
+func BuildExcel(results []map[string]any) ([]byte, error) {
 	excel := excelize.NewFile()
 	sheet := "商户列表"
 	_ = excel.SetSheetName(excel.GetSheetName(0), sheet)
@@ -98,9 +97,9 @@ func ExportExcel(results []map[string]any) error {
 			row++
 		}
 	}
-	fileName := time.Now().Format("200601021504") + "-商户查询导出.xlsx"
-	if err := excel.SaveAs(fileName); err != nil {
-		return err
+	buffer, err := excel.WriteToBuffer()
+	if err != nil {
+		return nil, err
 	}
-	return nil
+	return buffer.Bytes(), nil
 }

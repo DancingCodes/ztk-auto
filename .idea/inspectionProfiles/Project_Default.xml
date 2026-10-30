@@ -21,6 +21,7 @@
         <method importPath="compress/gzip" receiver="*Reader" name="Close" />
         <method importPath="mime/multipart" receiver="*Writer" name="Close" />
         <method importPath="io" receiver="ReadCloser" name="Close" />
+        <method importPath="net/http" receiver="ResponseWriter" name="Write" />
       </methods>
     </inspection_tool>
     <inspection_tool class="SpellCheckingInspection" enabled="false" level="TYPO" enabled_by_default="false">
