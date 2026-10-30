@@ -13,7 +13,7 @@ func ExportMessageExcel(message string) error {
 	_ = excel.SetSheetName(excel.GetSheetName(0), sheet)
 	_ = excel.SetCellValue(sheet, "A1", message)
 	_ = excel.SetColWidth(sheet, "A", "A", 36)
-	fileName := time.Now().Format("200601021504") + "-商户查询导出.xlsx"
+	fileName := time.Now().Format("200601021504") + "-商户查询失败.xlsx"
 	if err := excel.SaveAs(fileName); err != nil {
 		return err
 	}
