@@ -57,7 +57,6 @@ func main() {
 		if !ok {
 			for _, value := range records {
 				value.(map[string]any)["isFirst"] = "无账号"
-				fmt.Println(value)
 			}
 			continue
 		}
