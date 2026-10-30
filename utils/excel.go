@@ -32,20 +32,8 @@ func BuildExcel(results []map[string]any) ([]byte, error) {
 	}
 	_ = excel.SetSheetRow(sheet, "A1", &headers)
 	headerStyle, _ := excel.NewStyle(&excelize.Style{
-		Font:      &excelize.Font{Bold: true, Color: "FFFFFF", Size: 11},
-		Fill:      excelize.Fill{Type: "pattern", Color: []string{"1F4E78"}, Pattern: 1},
-		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
-		Border:    []excelize.Border{{Type: "bottom", Color: "17365D", Style: 1}},
-	})
-	bodyStyle, _ := excel.NewStyle(&excelize.Style{
-		Font:      &excelize.Font{Color: "222222", Size: 10},
-		Alignment: &excelize.Alignment{Vertical: "center", WrapText: true},
-		Border:    []excelize.Border{{Type: "bottom", Color: "D9E2F3", Style: 1}},
-	})
-	centerStyle, _ := excel.NewStyle(&excelize.Style{
-		Font:      &excelize.Font{Color: "222222", Size: 10},
-		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
-		Border:    []excelize.Border{{Type: "bottom", Color: "D9E2F3", Style: 1}},
+		Font: &excelize.Font{Bold: true},
+		Fill: excelize.Fill{Type: "pattern", Color: []string{"D9E2F3"}, Pattern: 1},
 	})
 	_ = excel.SetCellStyle(sheet, "A1", "P1", headerStyle)
 	_ = excel.SetRowHeight(sheet, 1, 32)
@@ -72,14 +60,6 @@ func BuildExcel(results []map[string]any) ([]byte, error) {
 				record["activityTypeName"], record["merchantSource"], record["failReason"], isFirst,
 			}
 			_ = excel.SetSheetRow(sheet, fmt.Sprintf("A%d", row), &values)
-			_ = excel.SetCellStyle(sheet, fmt.Sprintf("A%d", row), fmt.Sprintf("P%d", row), bodyStyle)
-			_ = excel.SetCellStyle(sheet, fmt.Sprintf("A%d", row), fmt.Sprintf("A%d", row), centerStyle)
-			_ = excel.SetCellStyle(sheet, fmt.Sprintf("C%d", row), fmt.Sprintf("D%d", row), centerStyle)
-			_ = excel.SetCellStyle(sheet, fmt.Sprintf("F%d", row), fmt.Sprintf("F%d", row), centerStyle)
-			_ = excel.SetCellStyle(sheet, fmt.Sprintf("I%d", row), fmt.Sprintf("L%d", row), centerStyle)
-			_ = excel.SetCellStyle(sheet, fmt.Sprintf("N%d", row), fmt.Sprintf("N%d", row), centerStyle)
-			_ = excel.SetCellStyle(sheet, fmt.Sprintf("P%d", row), fmt.Sprintf("P%d", row), centerStyle)
-			_ = excel.SetRowHeight(sheet, row, 22)
 			row++
 		}
 	}
