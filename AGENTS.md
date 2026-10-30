@@ -5,7 +5,7 @@
 这是一个 Go HTTP 服务，用于：
 
 1. 使用 PC 账号登录并查询指定日期的商户变更列表。
-2. 根据合作方编号匹配 App 账号。
+2. 从合作方配置中读取对应的 App 账号。
 3. 使用 App 查询商户是否为首台。
 4. 将结果生成 Excel，并通过 HTTP 接口直接下载。
 
@@ -19,8 +19,7 @@ internal/excel.go     Excel 内存生成逻辑
 internal/server.go    HTTP 路由与请求参数处理
 internal/service.go   PC/App 查询业务流程编排
 config/               运行配置（真实配置不提交）
-  pc.json             PC 登录账号及合作方编号
-  app.json            App 账号及服务商编号
+  accounts.json       Admin 登录账号、合作方编号及对应 App 账号
 Dockerfile            Docker 镜像构建文件
 ```
 
@@ -42,6 +41,7 @@ GET /health
 
 ```text
 GET /api/merchant-export?date=YYYY-MM-DD
+GET /api/transaction-export?date=YYYY-MM-DD
 ```
 
 `date` 可省略；省略时默认查询昨天。接口会直接返回 `.xlsx` 文件。
@@ -51,13 +51,12 @@ GET /api/merchant-export?date=YYYY-MM-DD
 程序每次调用导出接口时，都会重新读取：
 
 ```text
-config/pc.json
-config/app.json
+config/accounts.json
 ```
 
 因此修改账号、密码或合作方编号后，不需要重启服务；下一次接口请求会使用最新配置。
 
-真实 `config/pc.json` 与 `config/app.json` 包含敏感账号信息，必须保持在 `.gitignore` 中，禁止提交到仓库、镜像或日志。只提交对应的示例配置文件。
+真实 `config/accounts.json` 包含敏感账号信息，必须保持在 `.gitignore` 中，禁止提交到仓库、镜像或日志。只提交对应的示例配置文件。
 
 ## 业务规则
 

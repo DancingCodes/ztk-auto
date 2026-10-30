@@ -1,9 +1,0 @@
-{
-  "username": "PC 登录账号",
-  "password": "PC 登录密码",
-  "operateId": "操作员编号",
-  "pcPartners": [
-    "合作方编号 1",
-    "合作方编号 2"
-  ]
-}

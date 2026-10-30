@@ -1,0 +1,14 @@
+{
+  "admin": {
+    "username": "Admin 登录账号",
+    "password": "Admin 登录密码",
+    "operateId": "操作员编号"
+  },
+  "partners": [
+    {
+      "serviceProviderNo": "合作方编号",
+      "phone": "App 登录手机号",
+      "password": "App 登录密码"
+    }
+  ]
+}
