@@ -38,7 +38,6 @@ func BuildTransactionExport(ctx context.Context, date string) ([]byte, error) {
 		}
 	}
 
-	appCode := PCGetDictionary(ctx, token, "appCode")
 	tranType := PCGetDictionary(ctx, token, "tranType")
 	extTransCode := PCGetDictionary(ctx, token, "extTransCode")
 	transCardType := PCGetDictionary(ctx, token, "transCardType")
@@ -46,9 +45,6 @@ func BuildTransactionExport(ctx context.Context, date string) ([]byte, error) {
 		records := result["data"].(map[string]any)["data"].(map[string]any)["records"].([]any)
 		for _, value := range records {
 			record := value.(map[string]any)
-			if name := appCode[record["appCode"].(string)]; name != "" {
-				record["appCode"] = name
-			}
 			if name := tranType[record["type"].(string)]; name != "" {
 				record["type"] = name
 			}
