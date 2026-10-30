@@ -65,11 +65,12 @@ func main() {
 				record["isFirst"] = "接口返回异常"
 				continue
 			}
-			if _, ok := appResult["records"].([]any); !ok {
+			appRecords, ok := appResult["records"].([]any)
+			if !ok || len(appRecords) == 0 {
 				record["isFirst"] = "无商户数据"
 				continue
 			}
-			record["appData"] = appResult["records"].([]any)
+			record["appData"] = appRecords
 		}
 	}
 
