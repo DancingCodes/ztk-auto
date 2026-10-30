@@ -54,6 +54,9 @@ func PCLogin(ctx context.Context, username, password, operateID string) map[stri
 	req.Header.Set("Authorization", pcBasicAuth)
 	req.Header.Set("Content-Type", w.FormDataContentType())
 	resp, _ := pcHTTPClient().Do(req)
+	if resp == nil {
+		return map[string]any{}
+	}
 	defer resp.Body.Close()
 	raw, _ := io.ReadAll(resp.Body)
 	data := map[string]any{}
@@ -66,6 +69,9 @@ func PCFindChange(ctx context.Context, token, date, agentNo string) any {
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	req.Header.Set("Authorization", "bearer "+token)
 	resp, _ := pcHTTPClient().Do(req)
+	if resp == nil {
+		return map[string]any{}
+	}
 	defer resp.Body.Close()
 	raw, _ := io.ReadAll(resp.Body)
 	var data any

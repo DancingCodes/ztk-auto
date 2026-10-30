@@ -56,6 +56,9 @@ func AppLogin(ctx context.Context, phone, password, serviceProviderNo string) ma
 	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, appLoginURL, &body)
 	req.Header.Set("Content-Type", w.FormDataContentType())
 	resp, _ := appHTTPClient().Do(req)
+	if resp == nil {
+		return map[string]any{}
+	}
 	defer resp.Body.Close()
 	raw, _ := io.ReadAll(resp.Body)
 	data := map[string]any{}
@@ -77,6 +80,9 @@ func AppFindCustomer(ctx context.Context, token, customer string) any {
 		req.Header.Set(key, value)
 	}
 	resp, _ := appHTTPClient().Do(req)
+	if resp == nil {
+		return nil
+	}
 	defer resp.Body.Close()
 	raw := appBody(resp)
 	var data any
