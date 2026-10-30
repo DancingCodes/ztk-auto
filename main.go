@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	ztk "ztk-auto/internal"
@@ -74,8 +73,10 @@ func main() {
 		}
 	}
 
-	if err := utils.ExportExcel(results); err != nil {
-		fmt.Println("导出 Excel 失败:", err)
-		return
+	if utils.ExportExcel(results) != nil {
+		err := utils.ExportMessageExcel("商户列表导出失败")
+		if err != nil {
+			return
+		}
 	}
 }
