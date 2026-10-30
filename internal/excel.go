@@ -82,9 +82,9 @@ func BuildTransactionExcel(results []map[string]any) ([]byte, error) {
 	sheet := "交易列表"
 	_ = excel.SetSheetName(excel.GetSheetName(0), sheet)
 	headers := []any{
-		"渠道名称", "商户编号", "商户名称", "机具序列号", "活动类型",
+		"商户编号", "商户名称", "机具序列号", "活动类型",
 		"交易金额", "资金类型", "交易类型", "支付渠道", "流水号",
-		"交易日期", "合作方编号", "合作方名称", "合作方角色",
+		"交易日期", "合作方编号", "合作方名称", "角色名称",
 	}
 	_ = excel.SetSheetRow(sheet, "A1", &headers)
 	headerStyle, _ := excel.NewStyle(&excelize.Style{
@@ -95,9 +95,9 @@ func BuildTransactionExcel(results []map[string]any) ([]byte, error) {
 	bodyStyle, _ := excel.NewStyle(&excelize.Style{
 		Alignment: &excelize.Alignment{Horizontal: "left"},
 	})
-	_ = excel.SetCellStyle(sheet, "A1", "N1", headerStyle)
+	_ = excel.SetCellStyle(sheet, "A1", "M1", headerStyle)
 	_ = excel.SetRowHeight(sheet, 1, 22)
-	_ = excel.SetColWidth(sheet, "A", "N", 24)
+	_ = excel.SetColWidth(sheet, "A", "M", 24)
 
 	row := 2
 	for _, result := range results {
@@ -105,7 +105,7 @@ func BuildTransactionExcel(results []map[string]any) ([]byte, error) {
 		for _, value := range records {
 			record := value.(map[string]any)
 			values := []any{
-				record["appCode"], record["externalCustomerNo"], record["customerName"], record["posSn"], record["activityName"],
+				record["externalCustomerNo"], record["customerName"], record["posSn"], record["activityName"],
 				record["amount"], record["type"], record["extTransCode"], record["transCardType"], record["externalNo"],
 				record["transTime"], record["agentNo"], record["agentName"], record["roleName"],
 			}
@@ -114,7 +114,7 @@ func BuildTransactionExcel(results []map[string]any) ([]byte, error) {
 		}
 	}
 	if row > 2 {
-		_ = excel.SetCellStyle(sheet, "A2", fmt.Sprintf("N%d", row-1), bodyStyle)
+		_ = excel.SetCellStyle(sheet, "A2", fmt.Sprintf("M%d", row-1), bodyStyle)
 	}
 	buffer, err := excel.WriteToBuffer()
 	if err != nil {
