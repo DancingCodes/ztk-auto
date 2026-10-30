@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -11,22 +10,13 @@ import (
 )
 
 func main() {
-	startedAt := time.Now()
-	fmt.Println("开始时间:", startedAt.Format("2006-01-02 15:04:05"))
-	defer func() {
-		endedAt := time.Now()
-		fmt.Println("结束时间:", endedAt.Format("2006-01-02 15:04:05"))
-		fmt.Println("用时:", endedAt.Sub(startedAt))
-	}()
-
 	// PCToken
 	pc := ztk.LoadPC("config/pc.json")
 	pcLogin := ztk.PCLogin(context.Background(), pc.Username, pc.Password, pc.OperateID)
 	pcToken, _ := pcLogin["access_token"].(string)
 
 	if pcToken == "" {
-		result, _ := json.MarshalIndent(pcLogin, "", "  ")
-		fmt.Println(string(result))
+		_ = utils.ExportMessageExcel("PC登录失败")
 		return
 	}
 
@@ -42,8 +32,7 @@ func main() {
 
 	for _, result := range results {
 		if _, ok := result["data"].(map[string]any)["records"].([]any); !ok {
-			response, _ := json.MarshalIndent(result, "", "  ")
-			fmt.Println(string(response))
+			_ = utils.ExportMessageExcel("PC商户列表获取失败：" + result["partner"].(string))
 			return
 		}
 	}

@@ -7,6 +7,19 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
+func ExportMessageExcel(message string) error {
+	excel := excelize.NewFile()
+	sheet := "提示"
+	_ = excel.SetSheetName(excel.GetSheetName(0), sheet)
+	_ = excel.SetCellValue(sheet, "A1", message)
+	_ = excel.SetColWidth(sheet, "A", "A", 36)
+	fileName := time.Now().Format("200601021504") + "-商户查询导出.xlsx"
+	if err := excel.SaveAs(fileName); err != nil {
+		return err
+	}
+	return nil
+}
+
 func ExportExcel(results []map[string]any) error {
 	excel := excelize.NewFile()
 	sheet := "商户列表"
@@ -89,6 +102,5 @@ func ExportExcel(results []map[string]any) error {
 	if err := excel.SaveAs(fileName); err != nil {
 		return err
 	}
-	fmt.Println("已生成 " + fileName)
 	return nil
 }
