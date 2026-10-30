@@ -2,8 +2,6 @@ package internal
 
 import (
 	"context"
-
-	"ztk-auto/utils"
 )
 
 func BuildMerchantExport(ctx context.Context, date string) ([]byte, error) {
@@ -12,7 +10,7 @@ func BuildMerchantExport(ctx context.Context, date string) ([]byte, error) {
 	pcLogin := PCLogin(ctx, pc.Username, pc.Password, pc.OperateID)
 	pcToken, _ := pcLogin["access_token"].(string)
 	if pcToken == "" {
-		return utils.BuildMessageExcel("PC登录失败")
+		return BuildMessageExcel("PC登录失败")
 	}
 
 	// Pc商户信息
@@ -27,10 +25,10 @@ func BuildMerchantExport(ctx context.Context, date string) ([]byte, error) {
 	for _, result := range results {
 		data, ok := result["data"].(map[string]any)
 		if !ok {
-			return utils.BuildMessageExcel("PC商户列表获取失败：" + result["partner"].(string))
+			return BuildMessageExcel("PC商户列表获取失败：" + result["partner"].(string))
 		}
 		if _, ok := data["records"].([]any); !ok {
-			return utils.BuildMessageExcel("PC商户列表获取失败：" + result["partner"].(string))
+			return BuildMessageExcel("PC商户列表获取失败：" + result["partner"].(string))
 		}
 	}
 
@@ -73,9 +71,9 @@ func BuildMerchantExport(ctx context.Context, date string) ([]byte, error) {
 	}
 
 	// 导出
-	file, err := utils.BuildExcel(results)
+	file, err := BuildExcel(results)
 	if err != nil {
-		return utils.BuildMessageExcel("商户列表导出失败")
+		return BuildMessageExcel("商户列表导出失败")
 	}
 	return file, nil
 }
