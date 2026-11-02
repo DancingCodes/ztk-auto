@@ -104,11 +104,11 @@ volumes:
   - ./config:/app/config:ro
 ```
 
-容器内部服务端口为 `8080`；对外端口由 `docker-compose.yml` 决定，例如：
+容器内部服务端口为 `9101`；对外端口由 `docker-compose.yml` 决定，例如：
 
 ```yaml
 ports:
-  - "9001:8080"
+  - "9001:9101"
 ```
 
 ## 注意事项
