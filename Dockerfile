@@ -9,5 +9,5 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o ztk-auto ./cmd/api
 FROM alpine:latest
 WORKDIR /app
 COPY --from=builder /app/ztk-auto ./ztk-auto
-EXPOSE 8080
+EXPOSE 9101
 CMD ["./ztk-auto"]
