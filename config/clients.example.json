@@ -1,0 +1,6 @@
+{
+  "clients": {
+    "client-a": "accounts/client-a.json",
+    "client-b": "accounts/client-b.json"
+  }
+}

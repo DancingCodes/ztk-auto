@@ -16,8 +16,7 @@ func GetTransactions(ctx context.Context, token, date string, partners []Partner
 	return results
 }
 
-func BuildTransactionExport(ctx context.Context, date string) ([]byte, error) {
-	accounts := LoadAccounts("config/accounts.json")
+func BuildTransactionExport(ctx context.Context, date string, accounts Accounts) ([]byte, error) {
 	login := PCLogin(ctx, accounts.Admin.Username, accounts.Admin.Password, accounts.Admin.OperateID)
 	token, _ := login["access_token"].(string)
 	if token == "" {
@@ -65,9 +64,8 @@ func BuildTransactionExport(ctx context.Context, date string) ([]byte, error) {
 	return file, nil
 }
 
-func BuildMerchantExport(ctx context.Context, date string) ([]byte, error) {
+func BuildMerchantExport(ctx context.Context, date string, accounts Accounts) ([]byte, error) {
 	// Admin登录
-	accounts := LoadAccounts("config/accounts.json")
 	pcLogin := PCLogin(ctx, accounts.Admin.Username, accounts.Admin.Password, accounts.Admin.OperateID)
 	pcToken, _ := pcLogin["access_token"].(string)
 	if pcToken == "" {

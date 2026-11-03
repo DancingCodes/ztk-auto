@@ -20,7 +20,8 @@ internal/excel.go     Excel 内存生成逻辑
 internal/server.go    HTTP 路由与请求参数处理
 internal/service.go   PC/App 查询业务流程编排
 config/               运行配置（真实配置不提交）
-  accounts.json       Admin 登录账号、合作方编号及对应 App 账号
+  clients.json        客户标识与账户配置文件映射
+  accounts/           每个客户独立的 Admin、合作方及 App 账号配置
 Dockerfile            Docker 镜像构建文件
 ```
 
@@ -41,11 +42,11 @@ GET /health
 导出接口：
 
 ```text
-GET /api/merchant-export?date=YYYY-MM-DD
-GET /api/transaction-export?date=YYYY-MM-DD
+GET /api/merchant-export?client=客户标识&date=YYYY-MM-DD
+GET /api/transaction-export?client=客户标识&date=YYYY-MM-DD
 ```
 
-`date` 可省略；省略时默认查询昨天。接口会直接返回 `.xlsx` 文件。
+`client` 必填，用于选择 `config/clients.json` 中登记的账户配置；`date` 可省略，省略时默认查询昨天。接口会直接返回 `.xlsx` 文件。
 
 接口响应约定：
 
@@ -58,12 +59,13 @@ GET /api/transaction-export?date=YYYY-MM-DD
 程序每次调用导出接口时，都会重新读取：
 
 ```text
-config/accounts.json
+config/clients.json
+config/accounts/*.json
 ```
 
-因此修改账号、密码或合作方编号后，不需要重启服务；下一次接口请求会使用最新配置。
+因此修改客户映射、账号、密码或合作方编号后，不需要重启服务；下一次接口请求会使用最新配置。
 
-真实 `config/accounts.json` 包含敏感账号信息，必须保持在 `.gitignore` 中，禁止提交到仓库、镜像或日志。只提交对应的示例配置文件。
+真实 `config/clients.json` 和 `config/accounts/*.json` 包含客户标识及敏感账号信息，必须保持在 `.gitignore` 中，禁止提交到仓库、镜像或日志。只提交对应的示例配置文件。
 
 ## 业务规则
 

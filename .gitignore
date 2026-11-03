@@ -1,3 +1,5 @@
 .idea
 
-config/accounts.json
+config/clients.json
+config/accounts/*
+!config/accounts/client.example.json

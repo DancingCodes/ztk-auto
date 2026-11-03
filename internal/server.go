@@ -31,8 +31,12 @@ func merchantExport(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	accounts, ok := exportAccounts(w, r)
+	if !ok {
+		return
+	}
 
-	file, err := BuildMerchantExport(r.Context(), date)
+	file, err := BuildMerchantExport(r.Context(), date, accounts)
 	if err != nil {
 		writeError(w, err.Error())
 		return
@@ -53,8 +57,12 @@ func transactionExport(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	accounts, ok := exportAccounts(w, r)
+	if !ok {
+		return
+	}
 
-	file, err := BuildTransactionExport(r.Context(), date)
+	file, err := BuildTransactionExport(r.Context(), date, accounts)
 	if err != nil {
 		writeError(w, err.Error())
 		return
@@ -75,6 +83,20 @@ func exportDate(w http.ResponseWriter, r *http.Request) (string, bool) {
 		return "", false
 	}
 	return date, true
+}
+
+func exportAccounts(w http.ResponseWriter, r *http.Request) (Accounts, bool) {
+	client := r.URL.Query().Get("client")
+	if client == "" {
+		writeError(w, "client 参数不能为空")
+		return Accounts{}, false
+	}
+	accounts, err := LoadClientAccounts(client)
+	if err != nil {
+		writeError(w, "客户配置不存在")
+		return Accounts{}, false
+	}
+	return accounts, true
 }
 
 func writeError(w http.ResponseWriter, message string) {

@@ -8,6 +8,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -36,11 +37,36 @@ type Partner struct {
 	Password          string `json:"password"`
 }
 
-func LoadAccounts(path string) Accounts {
-	raw, _ := os.ReadFile(path)
-	var config Accounts
-	_ = json.Unmarshal(raw, &config)
-	return config
+type Clients struct {
+	Clients map[string]string `json:"clients"`
+}
+
+func LoadClientAccounts(client string) (Accounts, error) {
+	raw, err := os.ReadFile("config/clients.json")
+	if err != nil {
+		return Accounts{}, err
+	}
+
+	var clients Clients
+	if err := json.Unmarshal(raw, &clients); err != nil {
+		return Accounts{}, err
+	}
+
+	accountsFile := clients.Clients[client]
+	if accountsFile == "" {
+		return Accounts{}, os.ErrNotExist
+	}
+
+	raw, err = os.ReadFile(filepath.Join("config", accountsFile))
+	if err != nil {
+		return Accounts{}, err
+	}
+
+	var accounts Accounts
+	if err := json.Unmarshal(raw, &accounts); err != nil {
+		return Accounts{}, err
+	}
+	return accounts, nil
 }
 
 func PCLogin(ctx context.Context, username, password, operateID string) map[string]any {
