@@ -112,39 +112,49 @@ func BuildMerchantExport(ctx context.Context, date string, accounts Accounts) ([
 		}
 	}
 
-	// App登录 + App商户信息
-	for _, result := range results {
-		records := result["data"].(map[string]any)["records"].([]any)
-		account := result["account"].(Partner)
-		if account.Phone == "" || account.Password == "" {
+	// 配置了统一首台结果时，跳过 App 登录和商户查询。
+	if accounts.IsFirst != "" {
+		for _, result := range results {
+			records := result["data"].(map[string]any)["records"].([]any)
 			for _, value := range records {
-				value.(map[string]any)["isFirst"] = "无账号"
+				value.(map[string]any)["isFirst"] = accounts.IsFirst
 			}
-			continue
 		}
-		appLogin := AppLogin(ctx, account.Phone, account.Password, account.ServiceProviderNo)
-		appToken, _ := appLogin["access_token"].(string)
-		if appToken == "" {
-			for _, value := range records {
-				value.(map[string]any)["isFirst"] = "App登录失败"
-			}
-			continue
-		}
-		for _, value := range records {
-			record := value.(map[string]any)
-			externalCustomerNo := record["externalCustomerNo"].(string)
-			appData := AppFindCustomer(ctx, appToken, externalCustomerNo)
-			appResult, ok := appData.(map[string]any)
-			if !ok {
-				record["isFirst"] = "接口返回异常"
+	} else {
+		// App登录 + App商户信息
+		for _, result := range results {
+			records := result["data"].(map[string]any)["records"].([]any)
+			account := result["account"].(Partner)
+			if account.Phone == "" || account.Password == "" {
+				for _, value := range records {
+					value.(map[string]any)["isFirst"] = "无账号"
+				}
 				continue
 			}
-			appRecords, ok := appResult["records"].([]any)
-			if !ok || len(appRecords) == 0 {
-				record["isFirst"] = "无商户数据"
+			appLogin := AppLogin(ctx, account.Phone, account.Password, account.ServiceProviderNo)
+			appToken, _ := appLogin["access_token"].(string)
+			if appToken == "" {
+				for _, value := range records {
+					value.(map[string]any)["isFirst"] = "App登录失败"
+				}
 				continue
 			}
-			record["appData"] = appRecords
+			for _, value := range records {
+				record := value.(map[string]any)
+				externalCustomerNo := record["externalCustomerNo"].(string)
+				appData := AppFindCustomer(ctx, appToken, externalCustomerNo)
+				appResult, ok := appData.(map[string]any)
+				if !ok {
+					record["isFirst"] = "接口返回异常"
+					continue
+				}
+				appRecords, ok := appResult["records"].([]any)
+				if !ok || len(appRecords) == 0 {
+					record["isFirst"] = "无商户数据"
+					continue
+				}
+				record["appData"] = appRecords
+			}
 		}
 	}
 

@@ -1,4 +1,5 @@
 {
+  "isFirst": "是",
   "admin": {
     "username": "Admin 登录账号",
     "password": "Admin 登录密码",

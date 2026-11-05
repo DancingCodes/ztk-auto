@@ -29,6 +29,7 @@ type Admin struct {
 type Accounts struct {
 	Admin    Admin     `json:"admin"`
 	Partners []Partner `json:"partners"`
+	IsFirst  string    `json:"isFirst"`
 }
 
 type Partner struct {
