@@ -109,3 +109,37 @@ func BuildTransactionExcel(results []map[string]any) ([]byte, error) {
 	}
 	return buffer.Bytes(), nil
 }
+
+func BuildSelfRegExcel(codes []SelfRegCode) ([]byte, error) {
+	excel := excelize.NewFile()
+	sheet := "自主进件码"
+	_ = excel.SetSheetName(excel.GetSheetName(0), sheet)
+	headers := []any{"账号", "合作方编号", "进件码", "二维码链接"}
+	_ = excel.SetSheetRow(sheet, "A1", &headers)
+	headerStyle, _ := excel.NewStyle(&excelize.Style{
+		Font:      &excelize.Font{Bold: true},
+		Fill:      excelize.Fill{Type: "pattern", Color: []string{"D9E2F3"}, Pattern: 1},
+		Alignment: &excelize.Alignment{Horizontal: "left"},
+	})
+	bodyStyle, _ := excel.NewStyle(&excelize.Style{
+		Alignment: &excelize.Alignment{Horizontal: "left"},
+	})
+	_ = excel.SetCellStyle(sheet, "A1", "D1", headerStyle)
+	_ = excel.SetRowHeight(sheet, 1, 22)
+	_ = excel.SetColWidth(sheet, "A", "A", 24)
+	_ = excel.SetColWidth(sheet, "B", "C", 24)
+	_ = excel.SetColWidth(sheet, "D", "D", 80)
+
+	for index, code := range codes {
+		values := []any{code.Account, code.ServiceProviderNo, code.SelfRegSN, code.SelfRegURL}
+		_ = excel.SetSheetRow(sheet, fmt.Sprintf("A%d", index+2), &values)
+	}
+	if len(codes) > 0 {
+		_ = excel.SetCellStyle(sheet, "A2", fmt.Sprintf("D%d", len(codes)+1), bodyStyle)
+	}
+	buffer, err := excel.WriteToBuffer()
+	if err != nil {
+		return nil, err
+	}
+	return buffer.Bytes(), nil
+}

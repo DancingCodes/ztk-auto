@@ -2,6 +2,7 @@ package internal
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -10,6 +11,7 @@ func Handler() http.Handler {
 	mux.HandleFunc("/health", health)
 	mux.HandleFunc("/api/merchant-export", merchantExport)
 	mux.HandleFunc("/api/transaction-export", transactionExport)
+	mux.HandleFunc("/api/self-reg-export", selfRegExport)
 	return mux
 }
 
@@ -68,6 +70,48 @@ func transactionExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fileName := time.Now().Format("200601021504") + "-交易查询导出.xlsx"
+	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	w.Header().Set("Content-Disposition", "attachment; filename=\""+fileName+"\"")
+	w.Write(file)
+}
+
+func selfRegExport(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, "请求方式错误")
+		return
+	}
+
+	query := r.URL.Query()
+	accounts := query["account"]
+	passwords := query["password"]
+	serviceProviderNos := query["serviceProviderNo"]
+	counts := query["count"]
+	if len(accounts) == 0 || len(accounts) != len(passwords) || len(accounts) != len(serviceProviderNos) || len(accounts) != len(counts) {
+		writeError(w, "account、password、serviceProviderNo、count 参数数量必须一致")
+		return
+	}
+
+	requests := make([]SelfRegAccount, 0, len(accounts))
+	for index, account := range accounts {
+		count, err := strconv.Atoi(counts[index])
+		if account == "" || passwords[index] == "" || serviceProviderNos[index] == "" || err != nil || count < 1 {
+			writeError(w, "account、password、serviceProviderNo 不能为空且 count 必须大于 0")
+			return
+		}
+		requests = append(requests, SelfRegAccount{
+			Account:           account,
+			Password:          passwords[index],
+			ServiceProviderNo: serviceProviderNos[index],
+			Count:             count,
+		})
+	}
+
+	file, err := BuildSelfRegExport(r.Context(), requests)
+	if err != nil {
+		writeError(w, err.Error())
+		return
+	}
+	fileName := time.Now().Format("200601021504") + "-自主进件码导出.xlsx"
 	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 	w.Header().Set("Content-Disposition", "attachment; filename=\""+fileName+"\"")
 	w.Write(file)

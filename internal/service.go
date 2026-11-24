@@ -16,6 +16,44 @@ func GetTransactions(ctx context.Context, token, date string, partners []Partner
 	return results
 }
 
+type SelfRegAccount struct {
+	Account           string
+	Password          string
+	ServiceProviderNo string
+	Count             int
+}
+
+func BuildSelfRegExport(ctx context.Context, accounts []SelfRegAccount) ([]byte, error) {
+	var codes []SelfRegCode
+	for _, account := range accounts {
+		login := AppLogin(ctx, account.Account, account.Password, account.ServiceProviderNo)
+		token, _ := login["access_token"].(string)
+		if token == "" {
+			return nil, errors.New("App登录失败")
+		}
+
+		for i := 0; i < account.Count; i++ {
+			created := AppCreateSelfReg(ctx, token)
+			if created.ID == "" {
+				return nil, errors.New("自主进件码创建失败")
+			}
+			detail := AppGetSelfRegDetail(ctx, token, created.ID)
+			if detail.SelfRegSN == "" || detail.SelfRegURL == "" {
+				return nil, errors.New("自主进件码详情获取失败")
+			}
+			detail.Account = account.Account
+			detail.ServiceProviderNo = account.ServiceProviderNo
+			codes = append(codes, detail)
+		}
+	}
+
+	file, err := BuildSelfRegExcel(codes)
+	if err != nil {
+		return nil, errors.New("自主进件码导出失败")
+	}
+	return file, nil
+}
+
 func BuildTransactionExport(ctx context.Context, date string, accounts Accounts) ([]byte, error) {
 	login := PCLogin(ctx, accounts.Admin.Username, accounts.Admin.Password, accounts.Admin.OperateID)
 	token, _ := login["access_token"].(string)
@@ -167,7 +205,7 @@ func BuildMerchantExport(ctx context.Context, date string, accounts Accounts) ([
 }
 
 var accountType = map[string]string{
-	"PERSONAL":           "个人",
+	"PERSONAL":            "个人",
 	"ZHTK_OPERATE_CENTER": "运营中心",
 }
 

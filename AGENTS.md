@@ -9,6 +9,7 @@
 3. 使用 App 查询商户是否为首台。
 4. 查询合作方交易列表。
 5. 将商户或交易结果生成 Excel，并通过 HTTP 接口直接下载。
+6. 登录 App 账号生成指定数量的自主进件码，并导出进件码和二维码链接。
 
 ## 目录结构
 
@@ -44,9 +45,11 @@ GET /health
 ```text
 GET /api/merchant-export?client=客户标识&date=YYYY-MM-DD
 GET /api/transaction-export?client=客户标识&date=YYYY-MM-DD
+GET /api/self-reg-export?account=账号1&password=密码1&serviceProviderNo=合作方编号1&count=2&account=账号2&password=密码2&serviceProviderNo=合作方编号2&count=3
 ```
 
 `client` 必填，用于选择 `config/clients.json` 中登记的账户配置；`date` 可省略，省略时默认查询昨天。接口会直接返回 `.xlsx` 文件。
+自主进件码接口通过重复的查询参数接收多个账号、密码、合作方编号和数量，按参数下标配对；返回 Excel 第一列为账号，后面为 `selfRegSn` 和 `selfRegUrl`。
 
 接口响应约定：
 
