@@ -17,41 +17,39 @@ func GetTransactions(ctx context.Context, token, date string, partners []Partner
 }
 
 type SelfRegAccount struct {
-	Account           string
-	Password          string
-	ServiceProviderNo string
-	Count             int
+	Account           string `json:"account"`
+	Password          string `json:"password"`
+	ServiceProviderNo string `json:"serviceProviderNo"`
 }
 
-func BuildSelfRegExport(ctx context.Context, accounts []SelfRegAccount) ([]byte, error) {
-	var codes []SelfRegCode
-	for _, account := range accounts {
-		login := AppLogin(ctx, account.Account, account.Password, account.ServiceProviderNo)
-		token, _ := login["access_token"].(string)
-		if token == "" {
-			return nil, errors.New("App登录失败")
-		}
+type SelfRegResult struct {
+	Account           string `json:"account"`
+	ServiceProviderNo string `json:"serviceProviderNo"`
+	SelfRegSN         string `json:"selfRegSn"`
+	SelfRegURL        string `json:"selfRegUrl"`
+}
 
-		for i := 0; i < account.Count; i++ {
-			created := AppCreateSelfReg(ctx, token)
-			if created.ID == "" {
-				return nil, errors.New("自主进件码创建失败")
-			}
-			detail := AppGetSelfRegDetail(ctx, token, created.ID)
-			if detail.SelfRegSN == "" || detail.SelfRegURL == "" {
-				return nil, errors.New("自主进件码详情获取失败")
-			}
-			detail.Account = account.Account
-			detail.ServiceProviderNo = account.ServiceProviderNo
-			codes = append(codes, detail)
-		}
+func BuildSelfReg(ctx context.Context, account SelfRegAccount) (SelfRegResult, error) {
+	login := AppLogin(ctx, account.Account, account.Password, account.ServiceProviderNo)
+	token, _ := login["access_token"].(string)
+	if token == "" {
+		return SelfRegResult{}, errors.New("App登录失败")
 	}
 
-	file, err := BuildSelfRegExcel(codes)
-	if err != nil {
-		return nil, errors.New("自主进件码导出失败")
+	created := AppCreateSelfReg(ctx, token)
+	if created.ID == "" {
+		return SelfRegResult{}, errors.New("自主进件码创建失败")
 	}
-	return file, nil
+	detail := AppGetSelfRegDetail(ctx, token, created.ID)
+	if detail.SelfRegSN == "" || detail.SelfRegURL == "" {
+		return SelfRegResult{}, errors.New("自主进件码详情获取失败")
+	}
+	return SelfRegResult{
+		Account:           account.Account,
+		ServiceProviderNo: account.ServiceProviderNo,
+		SelfRegSN:         detail.SelfRegSN,
+		SelfRegURL:        detail.SelfRegURL,
+	}, nil
 }
 
 func BuildTransactionExport(ctx context.Context, date string, accounts Accounts) ([]byte, error) {

@@ -17,25 +17,23 @@ import (
 const (
 	appLoginURL      = "https://htkapi.lakala.com/auth/oauth/token"
 	appGetInfoURL    = "https://tkapi.lakala.com/ztkapi/customer"
-	selfRegCreateURL = "https://tkapi.lakala.com/htkmerchants/selfRegWp/create"
-	selfRegDetailURL = "https://tkapi.lakala.com/htkmerchants/selfRegWp/detail/"
+	selfRegCreateURL = "https://tkapi.lakala.com/htkmerchants/selfRegMp/create"
+	selfRegDetailURL = "https://tkapi.lakala.com/htkmerchants/selfRegMp/detail/"
 	appClientID      = "zhtk"
 	appClientSecret  = "prKTcg0iN46omMAF"
 )
 
 type SelfRegCode struct {
-	Account           string      `json:"-"`
-	ServiceProviderNo string      `json:"-"`
-	ID                json.Number `json:"id"`
-	SelfRegSN         string      `json:"selfRegSn"`
-	SelfRegURL        string      `json:"selfRegUrl"`
+	ID         json.Number `json:"id"`
+	SelfRegSN  string      `json:"selfRegSn"`
+	SelfRegURL string      `json:"selfRegUrl"`
 }
 
 func AppCreateSelfReg(ctx context.Context, token string) SelfRegCode {
-	body := bytes.NewBufferString(`{"activityType":"ZMTZYB"}`)
+	body := bytes.NewBufferString(`{"activityType":"ZTKZMTSCZC"}`)
 	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, selfRegCreateURL, body)
 	setAppHeaders(req, token)
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/json;charset=utf-8")
 
 	resp, _ := appHTTPClient().Do(req)
 	if resp == nil {

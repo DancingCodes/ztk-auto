@@ -20,6 +20,7 @@ internal/pc.go        PC 登录与商户列表接口
 internal/excel.go     Excel 内存生成逻辑
 internal/server.go    HTTP 路由与请求参数处理
 internal/service.go   PC/App 查询业务流程编排
+internal/web/              自主进件页面及本地前端依赖
 config/               运行配置（真实配置不提交）
   clients.json        客户标识与账户配置文件映射
   accounts/           每个客户独立的 Admin、合作方及 App 账号配置
@@ -38,6 +39,7 @@ go run ./cmd/api
 
 ```text
 GET /health
+GET /self-reg?accountId=账号配置编号
 ```
 
 导出接口：
@@ -45,11 +47,11 @@ GET /health
 ```text
 GET /api/merchant-export?client=客户标识&date=YYYY-MM-DD
 GET /api/transaction-export?client=客户标识&date=YYYY-MM-DD
-GET /api/self-reg-export?account=账号1&password=密码1&serviceProviderNo=合作方编号1&count=2&account=账号2&password=密码2&serviceProviderNo=合作方编号2&count=3
+POST /api/self-reg
 ```
 
 `client` 必填，用于选择 `config/clients.json` 中登记的账户配置；`date` 可省略，省略时默认查询昨天。接口会直接返回 `.xlsx` 文件。
-自主进件码接口通过重复的查询参数接收多个账号、密码、合作方编号和数量，按参数下标配对；返回 Excel 第一列为账号，后面为 `selfRegSn` 和 `selfRegUrl`。
+自主进件码页面为 `/self-reg?accountId=账号配置编号`，使用本地内嵌的 Vue 3、UnoCSS Runtime 和 QRCode.js；页面调用 `POST /api/self-reg`。接口接收 JSON 参数 `accountId`，从 `config/self-reg-accounts.json` 读取账号、密码和合作方编号；每次生成一条，成功时返回包含 `account`、`serviceProviderNo`、`selfRegSn` 和 `selfRegUrl` 的 JSON 对象。
 
 接口响应约定：
 
@@ -63,10 +65,11 @@ GET /api/self-reg-export?account=账号1&password=密码1&serviceProviderNo=合�
 
 ```text
 config/clients.json
+config/self-reg-accounts.json
 config/accounts/*.json
 ```
 
-因此修改客户映射、账号、密码或合作方编号后，不需要重启服务；下一次接口请求会使用最新配置。
+因此修改客户映射、账号、密码或合作方编号后，不需要重启服务；下一次接口请求会使用最新配置。自主进件码接口的 `accountId` 映射保存在 `config/self-reg-accounts.json`。
 
 真实 `config/clients.json` 和 `config/accounts/*.json` 包含客户标识及敏感账号信息，必须保持在 `.gitignore` 中，禁止提交到仓库、镜像或日志。只提交对应的示例配置文件。
 

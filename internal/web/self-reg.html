@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>自主进件码</title>
+  <script src="/self-reg-assets/vendor/vue.global.prod.js"></script>
+  <script src="/self-reg-assets/vendor/unocss.runtime.js"></script>
+  <script src="/self-reg-assets/vendor/qrcode.min.js"></script>
+</head>
+<body class="m-0 min-w-[320px] bg-[#f4f7fb] text-[#172033] font-sans">
+  <main id="app" class="box-border grid min-h-screen place-items-center p-6 max-sm:p-3">
+    <section class="w-full max-w-[560px] overflow-hidden rounded-xl border border-[#e4e9f2] bg-white shadow-[0_12px_35px_rgba(37,55,85,.08)]" aria-live="polite">
+      <header class="border-b border-[#edf0f5] px-7 py-6 max-sm:px-5">
+        <div class="text-xs font-bold tracking-[.08em] text-[#5272a5]">ZHTK / SELF REGISTRATION</div>
+        <h1 class="m-0 mt-2 text-2xl leading-tight font-700">自主进件码</h1>
+        <p class="m-0 mt-2.5 text-sm text-[#6d788b]">生成一条新的众码通实体码</p>
+      </header>
+
+      <div class="px-7 py-6 pb-7 max-sm:px-5">
+        <button class="mt-5 w-full cursor-pointer rounded-lg border-0 bg-[#2364d2] px-4 py-3 font-700 text-white transition duration-160 hover:bg-[#1b53b5] disabled:cursor-not-allowed disabled:opacity-55" type="button" :disabled="!accountId || loading" @click="generate">
+          {{ loading ? '生成中...' : '生成进件码' }}
+        </button>
+
+        <div v-if="!accountId" class="mt-4 rounded-lg border border-[#ffd8dc] bg-[#fff1f2] p-3 text-sm leading-6 text-[#a33b45]">访问链接无效，请联系管理员。</div>
+        <div v-if="loading" class="mt-4 rounded-lg border border-[#dbeafe] bg-[#eff6ff] p-3 text-sm leading-6 text-[#315b91]">正在登录并生成进件码，请稍候。</div>
+        <div v-if="error" class="mt-4 rounded-lg border border-[#ffd8dc] bg-[#fff1f2] p-3 text-sm leading-6 text-[#a33b45]">{{ error }}</div>
+
+        <div v-if="result" class="mt-5 border-t border-[#edf0f5] pt-5">
+          <h2 class="m-0 mb-3.5 text-[15px] font-700">生成结果</h2>
+          <div class="py-3">
+            <div class="text-xs text-[#788398]">二维码链接</div>
+            <div class="flex items-start justify-between gap-3">
+              <div class="mt-1.5 min-w-0 break-words text-sm leading-6">{{ result.selfRegUrl }}</div>
+              <button class="shrink-0 cursor-pointer border-0 bg-transparent p-0 text-xs text-[#315b91] hover:text-[#1b53b5]" type="button" @click="copyLink">{{ copied ? '已复制' : '复制' }}</button>
+            </div>
+          </div>
+          <div class="mt-3 flex flex-col items-center gap-3 rounded-lg bg-[#f8fafc] p-4">
+            <div ref="qrcode" class="h-[180px] w-[180px] bg-white p-2"></div>
+            <button v-if="!wechatBrowser" class="cursor-pointer border-0 bg-transparent p-0 text-xs text-[#315b91] hover:text-[#1b53b5]" type="button" @click="downloadQRCode">下载二维码</button>
+          </div>
+          <div v-if="wechatBrowser" class="mt-3 rounded-lg border border-[#dbeafe] bg-[#eff6ff] p-3 text-sm leading-6 text-[#315b91]">请长按二维码保存图片。</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const { createApp } = Vue
+    createApp({
+      data() {
+        return {
+          accountId: new URLSearchParams(window.location.search).get('accountId') || '',
+          loading: false,
+          error: '',
+          result: null,
+          copied: false,
+          wechatBrowser: /MicroMessenger/i.test(navigator.userAgent),
+        }
+      },
+      methods: {
+        async generate() {
+          this.loading = true
+          this.error = ''
+          this.result = null
+          this.copied = false
+          try {
+            const response = await fetch('/api/self-reg', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ accountId: this.accountId }),
+            })
+            if (!response.ok) throw new Error(await response.text() || '生成失败')
+            this.result = await response.json()
+            await this.$nextTick()
+            this.renderQRCode()
+          } catch (error) {
+            this.error = error.message || '生成失败'
+          } finally {
+            this.loading = false
+          }
+        },
+        async copyLink() {
+          if (!this.result?.selfRegUrl) return
+          try {
+            await navigator.clipboard.writeText(this.result.selfRegUrl)
+            this.copied = true
+            window.setTimeout(() => { this.copied = false }, 1800)
+          } catch {
+            this.error = '复制失败，请手动选择并复制二维码链接。'
+          }
+        },
+        renderQRCode() {
+          if (!window.QRCode || !this.$refs.qrcode || !this.result?.selfRegUrl) {
+            this.error = '二维码组件加载失败，请刷新页面后重试。'
+            return
+          }
+          this.$refs.qrcode.innerHTML = ''
+          new QRCode(this.$refs.qrcode, {
+            text: this.result.selfRegUrl,
+            width: 180,
+            height: 180,
+            colorDark: '#172033',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M,
+          })
+          const canvas = this.$refs.qrcode.querySelector('canvas')
+          if (canvas) {
+            const image = document.createElement('img')
+            image.src = canvas.toDataURL('image/png')
+            image.alt = '二维码'
+            image.className = 'h-[180px] w-[180px]'
+            this.$refs.qrcode.replaceChildren(image)
+          }
+        },
+        downloadQRCode() {
+          const canvas = this.$refs.qrcode?.querySelector('canvas')
+          const image = this.$refs.qrcode?.querySelector('img')
+          const source = canvas?.toDataURL('image/png') || image?.src
+          if (!source) {
+            this.error = '二维码尚未生成，请稍后重试。'
+            return
+          }
+          const link = document.createElement('a')
+          link.href = source
+          link.download = `${this.result.selfRegSn || 'self-reg'}.png`
+          link.click()
+        },
+      },
+    }).mount('#app')
+  </script>
+</body>
+</html>

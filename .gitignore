@@ -1,5 +1,7 @@
 .idea
 
 config/clients.json
+config/self-reg-accounts.json
 config/accounts/*
 !config/accounts/client.example.json
+!config/self-reg-accounts.example.json

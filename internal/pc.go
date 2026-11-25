@@ -42,6 +42,27 @@ type Clients struct {
 	Clients map[string]string `json:"clients"`
 }
 
+type SelfRegAccounts struct {
+	Accounts map[string]SelfRegAccount `json:"accounts"`
+}
+
+func LoadSelfRegAccount(accountID string) (SelfRegAccount, error) {
+	raw, err := os.ReadFile("config/self-reg-accounts.json")
+	if err != nil {
+		return SelfRegAccount{}, err
+	}
+
+	var configured SelfRegAccounts
+	if err := json.Unmarshal(raw, &configured); err != nil {
+		return SelfRegAccount{}, err
+	}
+	account, ok := configured.Accounts[accountID]
+	if !ok {
+		return SelfRegAccount{}, os.ErrNotExist
+	}
+	return account, nil
+}
+
 func LoadClientAccounts(client string) (Accounts, error) {
 	raw, err := os.ReadFile("config/clients.json")
 	if err != nil {

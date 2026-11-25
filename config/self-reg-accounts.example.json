@@ -1,0 +1,9 @@
+{
+  "accounts": {
+    "a001": {
+      "account": "App 登录账号",
+      "password": "App 登录密码",
+      "serviceProviderNo": "合作方编号"
+    }
+  }
+}
