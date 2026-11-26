@@ -18,11 +18,22 @@
       </header>
 
       <div class="px-7 py-6 pb-7 max-sm:px-5">
-        <button class="mt-5 w-full cursor-pointer rounded-lg border-0 bg-[#2364d2] px-4 py-3 font-700 text-white transition duration-160 hover:bg-[#1b53b5] disabled:cursor-not-allowed disabled:opacity-55" type="button" :disabled="!accountId || loading" @click="generate">
+        <div v-if="manual" class="space-y-4">
+          <label class="block text-sm text-[#526078]">账号
+            <input v-model.trim="account" autocomplete="username" class="mt-1.5 box-border w-full rounded-lg border border-[#cbd5e1] bg-white px-3 py-2.5 text-base text-[#172033]" placeholder="请输入 App 账号">
+          </label>
+          <label class="block text-sm text-[#526078]">密码
+            <input v-model="password" type="password" autocomplete="current-password" class="mt-1.5 box-border w-full rounded-lg border border-[#cbd5e1] bg-white px-3 py-2.5 text-base text-[#172033]" placeholder="请输入 App 密码">
+          </label>
+          <label class="block text-sm text-[#526078]">合作方编号
+            <input v-model.trim="serviceProviderNo" class="mt-1.5 box-border w-full rounded-lg border border-[#cbd5e1] bg-white px-3 py-2.5 text-base text-[#172033]" placeholder="请输入合作方编号">
+          </label>
+        </div>
+        <button class="mt-5 w-full cursor-pointer rounded-lg border-0 bg-[#2364d2] px-4 py-3 font-700 text-white transition duration-160 hover:bg-[#1b53b5] disabled:cursor-not-allowed disabled:opacity-55" type="button" :disabled="loading || (manual ? !account || !password || !serviceProviderNo : !accountId)" @click="generate">
           {{ loading ? '生成中...' : '生成进件码' }}
         </button>
 
-        <div v-if="!accountId" class="mt-4 rounded-lg border border-[#ffd8dc] bg-[#fff1f2] p-3 text-sm leading-6 text-[#a33b45]">访问链接无效，请联系管理员。</div>
+        <div v-if="!manual && !accountId" class="mt-4 rounded-lg border border-[#ffd8dc] bg-[#fff1f2] p-3 text-sm leading-6 text-[#a33b45]">访问链接无效，请联系管理员。</div>
         <div v-if="loading" class="mt-4 rounded-lg border border-[#dbeafe] bg-[#eff6ff] p-3 text-sm leading-6 text-[#315b91]">正在登录并生成进件码，请稍候。</div>
         <div v-if="error" class="mt-4 rounded-lg border border-[#ffd8dc] bg-[#fff1f2] p-3 text-sm leading-6 text-[#a33b45]">{{ error }}</div>
 
@@ -51,6 +62,10 @@
       data() {
         return {
           accountId: new URLSearchParams(window.location.search).get('accountId') || '',
+          manual: window.location.pathname === '/self-reg-manual',
+          account: '',
+          password: '',
+          serviceProviderNo: '',
           loading: false,
           error: '',
           result: null,
@@ -65,10 +80,12 @@
           this.result = null
           this.copied = false
           try {
-            const response = await fetch('/api/self-reg', {
+            const response = await fetch(this.manual ? '/api/self-reg-manual' : '/api/self-reg', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ accountId: this.accountId }),
+              body: JSON.stringify(this.manual
+                ? { account: this.account, password: this.password, serviceProviderNo: this.serviceProviderNo }
+                : { accountId: this.accountId }),
             })
             if (!response.ok) throw new Error(await response.text() || '生成失败')
             this.result = await response.json()

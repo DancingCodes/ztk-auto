@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -19,7 +20,9 @@ func Handler() http.Handler {
 	mux.HandleFunc("/api/merchant-export", merchantExport)
 	mux.HandleFunc("/api/transaction-export", transactionExport)
 	mux.HandleFunc("/api/self-reg", selfReg)
+	mux.HandleFunc("/api/self-reg-manual", selfRegManual)
 	mux.HandleFunc("/self-reg", selfRegPage)
+	mux.HandleFunc("/self-reg-manual", selfRegPage)
 	mux.Handle("/self-reg-assets/", http.StripPrefix("/self-reg-assets/", http.FileServer(http.FS(webFiles))))
 	return mux
 }
@@ -126,6 +129,35 @@ func selfReg(w http.ResponseWriter, r *http.Request) {
 	log.Printf("自主进件码生成成功 accountId=%s selfRegSn=%s", request.AccountID, result.SelfRegSN)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	_ = json.NewEncoder(w).Encode(result)
+}
+
+func selfRegManual(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, "请求方式错误")
+		return
+	}
+
+	var account SelfRegAccount
+	if err := json.NewDecoder(r.Body).Decode(&account); err != nil || account.Account == "" || account.Password == "" || account.ServiceProviderNo == "" {
+		writeError(w, "账号、密码和合作方编号不能为空")
+		return
+	}
+	result, err := BuildSelfReg(r.Context(), account)
+	if err != nil {
+		writeError(w, err.Error())
+		return
+	}
+	log.Printf("自主进件码生成成功 accountSuffix=%s serviceProviderNo=%s selfRegSn=%s", maskAccount(account.Account), account.ServiceProviderNo, result.SelfRegSN)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	_ = json.NewEncoder(w).Encode(result)
+}
+
+func maskAccount(account string) string {
+	runes := []rune(account)
+	if len(runes) <= 4 {
+		return strings.Repeat("*", len(runes))
+	}
+	return strings.Repeat("*", len(runes)-4) + string(runes[len(runes)-4:])
 }
 
 func exportDate(w http.ResponseWriter, r *http.Request) (string, bool) {

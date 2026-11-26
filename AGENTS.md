@@ -40,6 +40,7 @@ go run ./cmd/api
 ```text
 GET /health
 GET /self-reg?accountId=账号配置编号
+GET /self-reg-manual
 ```
 
 导出接口：
@@ -48,10 +49,12 @@ GET /self-reg?accountId=账号配置编号
 GET /api/merchant-export?client=客户标识&date=YYYY-MM-DD
 GET /api/transaction-export?client=客户标识&date=YYYY-MM-DD
 POST /api/self-reg
+POST /api/self-reg-manual
 ```
 
 `client` 必填，用于选择 `config/clients.json` 中登记的账户配置；`date` 可省略，省略时默认查询昨天。接口会直接返回 `.xlsx` 文件。
 自主进件码页面为 `/self-reg?accountId=账号配置编号`，使用本地内嵌的 Vue 3、UnoCSS Runtime 和 QRCode.js；页面调用 `POST /api/self-reg`。接口接收 JSON 参数 `accountId`，从 `config/self-reg-accounts.json` 读取账号、密码和合作方编号；每次生成一条，成功时返回包含 `account`、`serviceProviderNo`、`selfRegSn` 和 `selfRegUrl` 的 JSON 对象。
+手动输入页面为 `/self-reg-manual`，调用 `POST /api/self-reg-manual`，接收 `account`、`password` 和 `serviceProviderNo`，账号密码只通过 POST 请求体传输。
 
 接口响应约定：
 
